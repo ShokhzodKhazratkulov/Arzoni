@@ -1,5 +1,4 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -10,36 +9,53 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
 
-  // API routes can go here
+  // API routes
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
+    res.json({ status: "ok", mode: process.env.NODE_ENV });
   });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { 
-        middlewareMode: true,
-        host: '0.0.0.0',
-        port: 3000,
-        hmr: process.env.DISABLE_HMR !== 'true'
-      },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    // In production, the server.js will be in the dist folder or root
-    // We assume the static files are in a 'client' subfolder or same 'dist' folder
-    const distPath = path.join(process.cwd(), 'dist');
+  // Determine if we are in production
+  const isProd = process.env.NODE_ENV === "production";
+
+  if (isProd) {
+    // In production, serve from the 'dist' directory
+    const distPath = path.resolve(process.cwd(), 'dist');
     app.use(express.static(distPath));
+    
+    // SPA fallback
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      res.sendFile(path.resolve(distPath, 'index.html'));
     });
+  } else {
+    // In development, use Vite middleware
+    try {
+      const { createServer: createViteServer } = await import('vite');
+      const vite = await createViteServer({
+        server: { 
+          middlewareMode: true,
+          host: '0.0.0.0',
+          port: 3000,
+          hmr: process.env.DISABLE_HMR !== 'true'
+        },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } catch (error) {
+      console.warn("Vite not found, falling back to static serving. Ensure NODE_ENV=production is set in production.");
+      const distPath = path.resolve(process.cwd(), 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        res.sendFile(path.resolve(distPath, 'index.html'));
+      });
+    }
   }
 
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT} in ${isProd ? 'production' : 'development'} mode`);
   });
 }
 
-startServer();
+startServer().catch(err => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
+});
