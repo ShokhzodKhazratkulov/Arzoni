@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isValidRestaurant(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.address is string && data.address.size() > 0 &&
+             data.dishes is list && data.dishes.size() > 0 &&
+             data.price is number && data.price >= 0 &&
+             data.location is map && 
+             data.location.lat is number && data.location.lng is number;
+    }
+
+    match /restaurants/{restaurantId} {
+      // Allow anyone to read restaurants (public map)
+      allow read: if true;
+      
+      // Allow anyone to create a restaurant (community submission)
+      // In a real app, we might want to moderate this or require auth
+      allow create: if isValidRestaurant(request.resource.data);
+      
+      // Only allow updates/deletes if we had an admin role, but for now let's keep it simple
+      allow update, delete: if false; 
+    }
+  }
+}

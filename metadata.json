@@ -1,0 +1,5 @@
+{
+  "name": "Arzoni",
+  "description": "Discover cheap local restaurants and food spots across Uzbekistan. A community-powered map for budget-conscious foodies.",
+  "requestFramePermissions": ["geolocation"]
+}

@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "A local food spot with affordable meals.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the restaurant" },
+        "address": { "type": "string", "description": "Address in Tashkent or city name" },
+        "dishes": { "type": "array", "items": { "type": "string" }, "description": "List of dishes served" },
+        "price": { "type": "number", "description": "Average price per meal in so'm" },
+        "rating": { "type": "number", "description": "Average star rating" },
+        "reviewCount": { "type": "number", "description": "Number of reviews" },
+        "description": { "type": "string", "description": "Short description of the spot" },
+        "submitter": { "type": "string", "description": "Name of the person who submitted (optional)" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "address", "dishes", "price", "location"]
+    }
+  },
+  "firestore": {
+    "restaurants": {
+      "schema": "Restaurant",
+      "description": "Collection of affordable restaurants."
+    }
+  }
+}
