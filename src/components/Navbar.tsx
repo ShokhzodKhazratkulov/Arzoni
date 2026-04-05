@@ -18,7 +18,7 @@ export default function Navbar() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 leading-none tracking-tight">
-              Arzoni
+              {t('appName')}
             </h1>
             <p className="text-xs text-gray-500 font-medium mt-1">
               {t('tagline')}

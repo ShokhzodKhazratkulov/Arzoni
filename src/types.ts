@@ -11,12 +11,23 @@ export interface Restaurant {
   address: string;
   dishes: string[];
   price: number;
-  rating: number;
+  rating: number; // This will be the average rating
   reviewCount: number;
   description: string;
   submitter?: string;
   location: Location;
   createdAt: string;
+  photoUrl?: string;
+}
+
+export interface Review {
+  id?: string;
+  restaurantId: string;
+  rating: number;
+  comment: string;
+  submitter: string;
+  createdAt: string;
+  photoUrl?: string;
 }
 
 export type SortOption = 'price' | 'rating' | 'distance';

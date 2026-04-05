@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, addDoc, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, addDoc, orderBy, doc, updateDoc, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
 import { seedDatabase } from './seed';
 import { Restaurant, SortOption } from './types';
@@ -78,6 +78,32 @@ export default function App() {
     }
   };
 
+  const handleAddReview = async (restaurantId: string, reviewData: any) => {
+    try {
+      // 1. Add review to subcollection
+      const reviewsRef = collection(db, 'restaurants', restaurantId, 'reviews');
+      await addDoc(reviewsRef, reviewData);
+
+      // 2. Recalculate average rating
+      const snapshot = await getDocs(reviewsRef);
+      const reviews = snapshot.docs.map(doc => doc.data());
+      
+      const totalRating = reviews.reduce((acc, curr) => acc + curr.rating, 0);
+      const avgRating = totalRating / reviews.length;
+
+      // 3. Update parent document
+      const restaurantRef = doc(db, 'restaurants', restaurantId);
+      await updateDoc(restaurantRef, {
+        rating: avgRating,
+        reviewCount: reviews.length
+      });
+      
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error adding review:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <Navbar />
@@ -112,6 +138,7 @@ export default function App() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddRestaurant}
+        onAddReview={handleAddReview}
       />
 
       {loading && (

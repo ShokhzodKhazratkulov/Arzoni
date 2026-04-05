@@ -11,8 +11,20 @@ service cloud.firestore {
              data.address is string && data.address.size() > 0 &&
              data.dishes is list && data.dishes.size() > 0 &&
              data.price is number && data.price >= 0 &&
+             data.rating is number && data.reviewCount is number &&
+             data.description is string &&
+             data.submitter is string &&
              data.location is map && 
-             data.location.lat is number && data.location.lng is number;
+             data.location.lat is number && data.location.lng is number &&
+             data.createdAt is string;
+    }
+
+    function isValidReview(data) {
+      return data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() > 0 &&
+             data.submitter is string && data.submitter.size() > 0 &&
+             data.createdAt is string &&
+             data.restaurantId is string;
     }
 
     match /restaurants/{restaurantId} {
@@ -20,11 +32,18 @@ service cloud.firestore {
       allow read: if true;
       
       // Allow anyone to create a restaurant (community submission)
-      // In a real app, we might want to moderate this or require auth
       allow create: if isValidRestaurant(request.resource.data);
       
-      // Only allow updates/deletes if we had an admin role, but for now let's keep it simple
-      allow update, delete: if false; 
+      // Allow updating rating and reviewCount when a review is added
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount']);
+      
+      allow delete: if false; 
+
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isValidReview(request.resource.data);
+        allow update, delete: if false;
+      }
     }
   }
 }

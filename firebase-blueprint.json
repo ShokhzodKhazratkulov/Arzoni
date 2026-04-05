@@ -20,15 +20,34 @@
             "lng": { "type": "number" }
           }
         },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "photoUrl": { "type": "string", "description": "Optional photo URL" }
       },
       "required": ["name", "address", "dishes", "price", "location"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "A user review for a restaurant.",
+      "type": "object",
+      "properties": {
+        "restaurantId": { "type": "string" },
+        "rating": { "type": "number", "minimum": 1, "maximum": 5 },
+        "comment": { "type": "string" },
+        "submitter": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "photoUrl": { "type": "string" }
+      },
+      "required": ["rating", "comment", "submitter", "createdAt"]
     }
   },
   "firestore": {
     "restaurants": {
       "schema": "Restaurant",
       "description": "Collection of affordable restaurants."
+    },
+    "restaurants/{restaurantId}/reviews": {
+      "schema": "Review",
+      "description": "Subcollection of reviews for a specific restaurant."
     }
   }
 }
