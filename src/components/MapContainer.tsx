@@ -12,6 +12,7 @@ import { Restaurant } from '../types';
 import { TASHKENT_CENTER, DISH_TYPES } from '../constants';
 import { Navigation, Star, MapPin, Crosshair } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { translateBatch } from '../services/translationService';
 
 interface MapContainerProps {
   restaurants: Restaurant[];
@@ -19,12 +20,46 @@ interface MapContainerProps {
 }
 
 const MapContent = ({ restaurants, onAddRestaurant }: MapContainerProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const map = useMap();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null);
+  const [translatedInfo, setTranslatedInfo] = useState({
+    name: '',
+    description: ''
+  });
 
   const selectedRestaurant = restaurants.find(r => r.id === selectedId);
+
+  useEffect(() => {
+    if (!selectedRestaurant) return;
+
+    const translateInfo = async () => {
+      if (i18n.language === 'en') {
+        setTranslatedInfo({
+          name: selectedRestaurant.name,
+          description: selectedRestaurant.description
+        });
+        return;
+      }
+
+      try {
+        const targetLangName = i18n.language === 'uz' ? 'Uzbek' : 'Russian';
+        const [translatedName, translatedDescription] = await translateBatch(
+          [selectedRestaurant.name, selectedRestaurant.description],
+          targetLangName
+        );
+        setTranslatedInfo({
+          name: translatedName,
+          description: translatedDescription
+        });
+      } catch (error) {
+        console.warn("InfoWindow translation failed, using original text:", error);
+      }
+    };
+
+    translateInfo();
+  }, [selectedId, i18n.language, selectedRestaurant]);
 
   const handleFindMe = useCallback(() => {
     if (navigator.geolocation) {
@@ -88,14 +123,14 @@ const MapContent = ({ restaurants, onAddRestaurant }: MapContainerProps) => {
             onCloseClick={() => setSelectedId(null)}
           >
             <div className="p-1 max-w-[200px]">
-              <h3 className="font-bold text-sm text-gray-900">{selectedRestaurant.name}</h3>
+              <h3 className="font-bold text-sm text-gray-900">{translatedInfo.name || selectedRestaurant.name}</h3>
               <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-1">
                 <Star size={10} className="text-yellow-400 fill-yellow-400" />
                 <span className="font-bold">{selectedRestaurant.rating}</span>
                 <span>({selectedRestaurant.reviewCount})</span>
               </div>
               <p className="text-[10px] text-gray-600 mt-1 line-clamp-2">
-                {selectedRestaurant.description}
+                {translatedInfo.description || selectedRestaurant.description}
               </p>
               <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
                 <span className="text-[10px] font-bold text-[#1D9E75]">
