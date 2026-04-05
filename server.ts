@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
 
   // API routes can go here
   app.get("/api/health", (req, res) => {
@@ -28,6 +28,8 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
+    // In production, the server.js will be in the dist folder or root
+    // We assume the static files are in a 'client' subfolder or same 'dist' folder
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
@@ -35,8 +37,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
   });
 }
 
