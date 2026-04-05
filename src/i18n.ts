@@ -31,7 +31,6 @@ const resources = {
       submit: "Submit",
       cancel: "Cancel",
       som: "so'm",
-      reviews: "reviews",
       loading: "Loading...",
       noResults: "No restaurants found matching your filters.",
       dishes: {
@@ -79,7 +78,6 @@ const resources = {
       submit: "Yuborish",
       cancel: "Bekor qilish",
       som: "so'm",
-      reviews: "taqrizlar",
       loading: "Yuklanmoqda...",
       noResults: "Filtrga mos restoranlar topilmadi.",
       dishes: {
@@ -127,7 +125,6 @@ const resources = {
       submit: "Отправить",
       cancel: "Отмена",
       som: "сум",
-      reviews: "отзывов",
       loading: "Загрузка...",
       noResults: "Рестораны не найдены.",
       dishes: {
