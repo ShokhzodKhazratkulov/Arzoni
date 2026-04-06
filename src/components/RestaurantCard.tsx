@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Star, MapPin, Navigation } from 'lucide-react';
+import { Star, MapPin, Navigation, Info, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Restaurant } from '../types';
 import { DISH_TYPES } from '../constants';
 import { motion } from 'motion/react';
+import RestaurantDetailsModal from './RestaurantDetailsModal';
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -11,6 +13,7 @@ interface RestaurantCardProps {
 
 export default function RestaurantCard({ restaurant }: RestaurantCardProps) {
   const { t } = useTranslation();
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const getPriceColor = (price: number) => {
     if (price <= 30000) return 'text-green-600 bg-green-50 border-green-100';
@@ -19,65 +22,103 @@ export default function RestaurantCard({ restaurant }: RestaurantCardProps) {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all p-4 flex flex-col gap-3"
-    >
-      {restaurant.photoUrl && (
-        <div className="w-full h-32 rounded-xl overflow-hidden mb-1">
-          <img src={restaurant.photoUrl} alt={restaurant.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-        </div>
-      )}
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="font-bold text-gray-900 text-lg leading-tight">{restaurant.name}</h3>
-          <div className="flex items-center gap-1 text-gray-500 text-xs mt-1">
-            <MapPin size={12} />
-            <span className="line-clamp-1">{restaurant.address}</span>
+    <>
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all p-4 flex flex-col gap-3 group"
+      >
+        {restaurant.photoUrl && (
+          <div 
+            className="w-full h-32 rounded-xl overflow-hidden mb-1 cursor-pointer relative overflow-hidden"
+            onClick={() => setIsDetailsOpen(true)}
+          >
+            <img 
+              src={restaurant.photoUrl} 
+              alt={restaurant.name} 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+              referrerPolicy="no-referrer" 
+            />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+              <Info size={24} className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+            </div>
+          </div>
+        )}
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <h3 
+              id="restaurant-name"
+              onClick={() => setIsDetailsOpen(true)}
+              className="font-bold text-gray-900 text-lg leading-tight cursor-pointer hover:text-[#1D9E75] transition-colors inline-block"
+            >
+              {restaurant.name}
+            </h3>
+            <div className="flex items-center gap-1 text-gray-500 text-xs mt-1">
+              <MapPin size={12} />
+              <span className="line-clamp-1">{restaurant.address}</span>
+            </div>
+          </div>
+          <div className={`px-2 py-1 rounded-lg border text-xs font-bold whitespace-nowrap ${getPriceColor(restaurant.price)}`}>
+            {restaurant.price.toLocaleString()} {t('som')}
           </div>
         </div>
-        <div className={`px-2 py-1 rounded-lg border text-xs font-bold whitespace-nowrap ${getPriceColor(restaurant.price)}`}>
-          {restaurant.price.toLocaleString()} {t('som')}
-        </div>
-      </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {restaurant.dishes.map(dishId => {
-          const dish = DISH_TYPES.find(d => d.id === dishId);
-          return dish ? (
-            <span key={dishId} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-[10px] font-medium">
-              {t(dish.label)}
+        <div className="flex flex-wrap gap-1.5">
+          {restaurant.dishes.map(dishId => {
+            const dish = DISH_TYPES.find(d => d.id === dishId);
+            return dish ? (
+              <span key={dishId} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-[10px] font-medium">
+                {t(dish.label)}
+              </span>
+            ) : null;
+          })}
+        </div>
+
+        <p className="text-gray-600 text-xs line-clamp-2 leading-relaxed">
+          {restaurant.description}
+        </p>
+
+        <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50">
+          <div className="flex items-center gap-3">
+            <div 
+              className="flex items-center gap-1 cursor-pointer hover:bg-gray-50 px-1.5 py-0.5 rounded-md transition-colors"
+              onClick={() => setIsDetailsOpen(true)}
+            >
+              <Star size={14} className="text-yellow-400 fill-yellow-400" />
+              <span className="text-xs font-bold text-gray-900">{restaurant.rating}</span>
+            </div>
+            <span className="text-[10px] text-gray-400 font-medium">
+              {restaurant.reviewCount} reviews
             </span>
-          ) : null;
-        })}
-      </div>
-
-      <p className="text-gray-600 text-xs line-clamp-2 leading-relaxed">
-        {restaurant.description}
-      </p>
-
-      <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <Star size={14} className="text-yellow-400 fill-yellow-400" />
-            <span className="text-xs font-bold text-gray-900">{restaurant.rating}</span>
+            <div className="flex items-center gap-2 ml-1">
+              <div className="flex items-center gap-0.5 text-green-600">
+                <ThumbsUp size={10} />
+                <span className="text-[10px] font-bold">{restaurant.likes || 0}</span>
+              </div>
+              <div className="flex items-center gap-0.5 text-red-600">
+                <ThumbsDown size={10} />
+                <span className="text-[10px] font-bold">{restaurant.dislikes || 0}</span>
+              </div>
+            </div>
           </div>
-          <span className="text-[10px] text-gray-400 font-medium">
-            {restaurant.reviewCount} reviews
-          </span>
+          
+          <a 
+            href={`https://www.google.com/maps/dir/?api=1&destination=${restaurant.location.lat},${restaurant.location.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-[#1D9E75] text-xs font-bold hover:underline"
+          >
+            <Navigation size={14} />
+            {t('getDirections')}
+          </a>
         </div>
-        
-        <a 
-          href={`https://www.google.com/maps/dir/?api=1&destination=${restaurant.location.lat},${restaurant.location.lng}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-[#1D9E75] text-xs font-bold hover:underline"
-        >
-          <Navigation size={14} />
-          {t('getDirections')}
-        </a>
-      </div>
-    </motion.div>
+      </motion.div>
+
+      <RestaurantDetailsModal 
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        restaurant={restaurant}
+      />
+    </>
   );
 }

@@ -16,7 +16,9 @@ service cloud.firestore {
              data.submitter is string &&
              data.location is map && 
              data.location.lat is number && data.location.lng is number &&
-             data.createdAt is string;
+             data.createdAt is string &&
+             (!('likes' in data) || data.likes is number) &&
+             (!('dislikes' in data) || data.dislikes is number);
     }
 
     function isValidReview(data) {
@@ -24,7 +26,9 @@ service cloud.firestore {
              data.comment is string && data.comment.size() > 0 &&
              data.submitter is string && data.submitter.size() > 0 &&
              data.createdAt is string &&
-             data.restaurantId is string;
+             data.restaurantId is string &&
+             (!('likes' in data) || data.likes is number) &&
+             (!('dislikes' in data) || data.dislikes is number);
     }
 
     match /restaurants/{restaurantId} {
@@ -34,15 +38,16 @@ service cloud.firestore {
       // Allow anyone to create a restaurant (community submission)
       allow create: if isValidRestaurant(request.resource.data);
       
-      // Allow updating rating and reviewCount when a review is added
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount']);
+      // Allow updating rating, reviewCount, likes, and dislikes
+      allow update: if true;
       
       allow delete: if false; 
 
       match /reviews/{reviewId} {
         allow read: if true;
         allow create: if isValidReview(request.resource.data);
-        allow update, delete: if false;
+        allow update: if true;
+        allow delete: if false;
       }
     }
   }

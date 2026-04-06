@@ -137,7 +137,9 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
         ...reviewData,
         restaurantId: selectedRestaurant.id,
         photoUrl: photo,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        likes: 0,
+        dislikes: 0
       });
     } else {
       onSubmit({
@@ -145,6 +147,8 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
         name: formData.name || searchTerm,
         rating: 0,
         reviewCount: 0,
+        likes: 0,
+        dislikes: 0,
         photoUrl: photo,
         createdAt: new Date().toISOString()
       });

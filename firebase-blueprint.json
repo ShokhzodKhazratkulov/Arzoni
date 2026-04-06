@@ -21,7 +21,9 @@
           }
         },
         "createdAt": { "type": "string", "format": "date-time" },
-        "photoUrl": { "type": "string", "description": "Optional photo URL" }
+        "photoUrl": { "type": "string", "description": "Optional photo URL" },
+        "likes": { "type": "number" },
+        "dislikes": { "type": "number" }
       },
       "required": ["name", "address", "dishes", "price", "location"]
     },
@@ -35,7 +37,9 @@
         "comment": { "type": "string" },
         "submitter": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "photoUrl": { "type": "string" }
+        "photoUrl": { "type": "string" },
+        "likes": { "type": "number" },
+        "dislikes": { "type": "number" }
       },
       "required": ["rating", "comment", "submitter", "createdAt"]
     }

@@ -12,7 +12,9 @@ const SAMPLE_RESTAURANTS = [
     reviewCount: 1250,
     description: "The most famous Plov center in Tashkent. Authentic taste and huge portions.",
     location: { lat: 41.3265, lng: 69.2285 },
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    likes: 0,
+    dislikes: 0
   },
   {
     name: "Somsa Saroyi",
@@ -23,7 +25,9 @@ const SAMPLE_RESTAURANTS = [
     reviewCount: 450,
     description: "Best tandoor somsa in the city. Crispy outside, juicy inside.",
     location: { lat: 41.2855, lng: 69.2045 },
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    likes: 0,
+    dislikes: 0
   },
   {
     name: "Lazzat Lag'mon",
@@ -34,7 +38,9 @@ const SAMPLE_RESTAURANTS = [
     reviewCount: 320,
     description: "Hand-pulled noodles with rich meat sauce. A local favorite.",
     location: { lat: 41.3545, lng: 69.2845 },
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    likes: 0,
+    dislikes: 0
   },
   {
     name: "Manti Markazi",
@@ -45,7 +51,9 @@ const SAMPLE_RESTAURANTS = [
     reviewCount: 580,
     description: "Steamed dumplings with various fillings. Try the pumpkin ones!",
     location: { lat: 41.3145, lng: 69.3245 },
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    likes: 0,
+    dislikes: 0
   },
   {
     name: "Shashlik House",
@@ -56,7 +64,9 @@ const SAMPLE_RESTAURANTS = [
     reviewCount: 890,
     description: "Premium charcoal-grilled meat. The lamb chops are exceptional.",
     location: { lat: 41.2745, lng: 69.2545 },
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    likes: 0,
+    dislikes: 0
   },
   {
     name: "Osh Markazi (Besh Qozon)",
@@ -67,7 +77,9 @@ const SAMPLE_RESTAURANTS = [
     reviewCount: 5000,
     description: "Huge cauldrons of plov. A must-visit for any tourist or local.",
     location: { lat: 41.3465, lng: 69.2845 },
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    likes: 0,
+    dislikes: 0
   },
   {
     name: "Anhor Bo'yi",
@@ -78,7 +90,9 @@ const SAMPLE_RESTAURANTS = [
     reviewCount: 210,
     description: "Beautiful view of the canal with delicious traditional meat dishes.",
     location: { lat: 41.3245, lng: 69.2645 },
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    likes: 0,
+    dislikes: 0
   },
   {
     name: "Chigatoy Shashlik",
@@ -89,7 +103,9 @@ const SAMPLE_RESTAURANTS = [
     reviewCount: 670,
     description: "Famous shashlik street. Authentic atmosphere and great prices.",
     location: { lat: 41.3345, lng: 69.2145 },
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    likes: 0,
+    dislikes: 0
   },
   {
     name: "Minor Somsa",
@@ -100,7 +116,9 @@ const SAMPLE_RESTAURANTS = [
     reviewCount: 150,
     description: "Quick and delicious somsa near the Minor mosque.",
     location: { lat: 41.3315, lng: 69.2745 },
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    likes: 0,
+    dislikes: 0
   },
   {
     name: "Student Osh",
@@ -111,7 +129,9 @@ const SAMPLE_RESTAURANTS = [
     reviewCount: 340,
     description: "Budget-friendly plov for students. Simple and filling.",
     location: { lat: 41.3445, lng: 69.2045 },
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    likes: 0,
+    dislikes: 0
   }
 ];
 

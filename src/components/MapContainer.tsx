@@ -10,8 +10,9 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Restaurant } from '../types';
 import { TASHKENT_CENTER, DISH_TYPES } from '../constants';
-import { Navigation, Star, MapPin, Crosshair } from 'lucide-react';
+import { Navigation, Star, MapPin, Crosshair, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import RestaurantDetailsModal from './RestaurantDetailsModal';
 
 interface MapContainerProps {
   restaurants: Restaurant[];
@@ -23,6 +24,7 @@ const MapContent = ({ restaurants, onAddRestaurant }: MapContainerProps) => {
   const map = useMap();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const selectedRestaurant = restaurants.find(r => r.id === selectedId);
 
@@ -88,10 +90,21 @@ const MapContent = ({ restaurants, onAddRestaurant }: MapContainerProps) => {
             onCloseClick={() => setSelectedId(null)}
           >
             <div className="p-1 max-w-[200px]">
-              <h3 className="font-bold text-sm text-gray-900">{selectedRestaurant.name}</h3>
+              <h3 
+                className="font-bold text-sm text-gray-900 cursor-pointer hover:text-[#1D9E75] transition-colors"
+                onClick={() => setIsDetailsOpen(true)}
+              >
+                {selectedRestaurant.name}
+              </h3>
               {selectedRestaurant.photoUrl && (
-                <div className="w-full h-20 rounded-lg overflow-hidden mt-1">
+                <div 
+                  className="w-full h-20 rounded-lg overflow-hidden mt-1 cursor-pointer relative group"
+                  onClick={() => setIsDetailsOpen(true)}
+                >
                   <img src={selectedRestaurant.photoUrl} alt={selectedRestaurant.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                    <Info size={16} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </div>
               )}
               <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-1">
@@ -103,9 +116,12 @@ const MapContent = ({ restaurants, onAddRestaurant }: MapContainerProps) => {
                 {selectedRestaurant.description}
               </p>
               <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
-                <span className="text-[10px] font-bold text-[#1D9E75]">
+                <button 
+                  onClick={() => setIsDetailsOpen(true)}
+                  className="text-[10px] font-bold text-[#1D9E75] hover:underline"
+                >
                   {selectedRestaurant.price.toLocaleString()} {t('som')}
-                </span>
+                </button>
                 <a 
                   href={`https://www.google.com/maps/dir/?api=1&destination=${selectedRestaurant.location.lat},${selectedRestaurant.location.lng}`}
                   target="_blank"
@@ -139,6 +155,14 @@ const MapContent = ({ restaurants, onAddRestaurant }: MapContainerProps) => {
         <span className="text-xl">+</span>
         {t('addRestaurant')}
       </button>
+
+      {selectedRestaurant && (
+        <RestaurantDetailsModal 
+          isOpen={isDetailsOpen}
+          onClose={() => setIsDetailsOpen(false)}
+          restaurant={selectedRestaurant}
+        />
+      )}
     </div>
   );
 };

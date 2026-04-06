@@ -152,10 +152,12 @@ export default function App() {
 
       <footer className="bg-white border-t border-gray-100 py-8 px-4 mt-12">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="flex justify-center gap-1 mb-4">
-            <div className="w-8 h-4 bg-[#1D9E75]" title="Uzbekistan Flag Green"></div>
-            <div className="w-8 h-4 bg-white border border-gray-100" title="Uzbekistan Flag White"></div>
-            <div className="w-8 h-4 bg-[#0099B5]" title="Uzbekistan Flag Blue"></div>
+          <div className="flex justify-center gap-0.5 mb-4 items-center">
+            <div className="w-8 h-4 bg-[#1D9E75]" title="Green"></div>
+            <div className="w-1 h-4 bg-[#CE1126]" title="Red"></div>
+            <div className="w-8 h-4 bg-white border border-gray-100" title="White"></div>
+            <div className="w-1 h-4 bg-[#CE1126]" title="Red"></div>
+            <div className="w-8 h-4 bg-[#0099B5]" title="Blue"></div>
           </div>
           <p className="text-gray-400 text-xs font-medium">
             &copy; {new Date().getFullYear()} Arzoni — {t('tagline')}

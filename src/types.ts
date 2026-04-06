@@ -18,6 +18,8 @@ export interface Restaurant {
   location: Location;
   createdAt: string;
   photoUrl?: string;
+  likes: number;
+  dislikes: number;
 }
 
 export interface Review {
@@ -28,6 +30,8 @@ export interface Review {
   submitter: string;
   createdAt: string;
   photoUrl?: string;
+  likes: number;
+  dislikes: number;
 }
 
 export type SortOption = 'price' | 'rating' | 'distance';
