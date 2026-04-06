@@ -24,6 +24,7 @@ export interface Restaurant {
   likes: number;
   dislikes: number;
   dishScore?: { [dishId: string]: number };
+  dishPrices?: { [dishId: string]: number };
 }
 
 export interface Review {

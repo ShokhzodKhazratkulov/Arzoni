@@ -18,7 +18,8 @@ const SAMPLE_RESTAURANTS = [
     createdAt: new Date().toISOString(),
     likes: 0,
     dislikes: 0,
-    dishScore: { "osh": 0.9, "shorva": 0.05, "somsa": 0.05 }
+    dishScore: { "osh": 0.9, "shorva": 0.05, "somsa": 0.05 },
+    dishPrices: { "osh": 28000, "shorva": 22000, "somsa": 8000 }
   },
   {
     name: "Somsa Saroyi",
@@ -35,7 +36,8 @@ const SAMPLE_RESTAURANTS = [
     createdAt: new Date().toISOString(),
     likes: 0,
     dislikes: 0,
-    dishScore: { "somsa": 0.95, "nonChoy": 0.05 }
+    dishScore: { "somsa": 0.95, "nonChoy": 0.05 },
+    dishPrices: { "somsa": 12000, "nonChoy": 5000 }
   },
   {
     name: "Lazzat Lag'mon",
@@ -52,7 +54,8 @@ const SAMPLE_RESTAURANTS = [
     createdAt: new Date().toISOString(),
     likes: 0,
     dislikes: 0,
-    dishScore: { "lagmon": 0.8, "chuchvara": 0.2 }
+    dishScore: { "lagmon": 0.8, "chuchvara": 0.2 },
+    dishPrices: { "lagmon": 32000, "chuchvara": 25000 }
   },
   {
     name: "Manti Markazi",
@@ -69,7 +72,8 @@ const SAMPLE_RESTAURANTS = [
     createdAt: new Date().toISOString(),
     likes: 0,
     dislikes: 0,
-    dishScore: { "manti": 0.85, "mastava": 0.15 }
+    dishScore: { "manti": 0.85, "mastava": 0.15 },
+    dishPrices: { "manti": 22000, "mastava": 18000 }
   },
   {
     name: "Osh Markazi (Besh Qozon)",
@@ -86,7 +90,8 @@ const SAMPLE_RESTAURANTS = [
     createdAt: new Date().toISOString(),
     likes: 0,
     dislikes: 0,
-    dishScore: { "osh": 0.98, "shorva": 0.02 }
+    dishScore: { "osh": 0.98, "shorva": 0.02 },
+    dishPrices: { "osh": 35000, "shorva": 25000 }
   },
   {
     name: "Student Osh",
@@ -103,7 +108,8 @@ const SAMPLE_RESTAURANTS = [
     createdAt: new Date().toISOString(),
     likes: 0,
     dislikes: 0,
-    dishScore: { "osh": 0.7, "nonChoy": 0.3 }
+    dishScore: { "osh": 0.7, "nonChoy": 0.3 },
+    dishPrices: { "osh": 20000, "nonChoy": 5000 }
   }
 ];
 
@@ -146,13 +152,15 @@ export async function seedDatabase() {
     const allDocs = await getDocs(restaurantsCol);
     for (const docSnapshot of allDocs.docs) {
       const data = docSnapshot.data();
-      if (data.dishScore === undefined) {
+      if (data.dishScore === undefined || data.dishPrices === undefined) {
         console.log(`Updating ${data.name} with default pre-computed fields...`);
-        // Assign some default scores based on their dishes
+        // Assign some default scores and prices based on their dishes
         const scores: { [key: string]: number } = {};
+        const prices: { [key: string]: number } = {};
         if (data.dishes && data.dishes.length > 0) {
           data.dishes.forEach((dishId: string, idx: number) => {
             scores[dishId] = idx === 0 ? 0.7 : 0.3 / (data.dishes.length - 1 || 1);
+            prices[dishId] = data.price || 25000;
           });
         }
         
@@ -160,7 +168,8 @@ export async function seedDatabase() {
           avgPrice: data.price || 25000,
           avgRating: data.rating || 4.5,
           totalReviews: data.reviewCount || 10,
-          dishScore: scores
+          dishScore: scores,
+          dishPrices: prices
         });
       }
     }

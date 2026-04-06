@@ -23,6 +23,11 @@ export default function RestaurantCard({ restaurant, onAddReview, selectedDishes
     return 'text-red-600 bg-red-50 border-red-100';
   };
 
+  const activeDishId = selectedDishes.length === 1 ? selectedDishes[0] : null;
+  const displayPrice = activeDishId && restaurant.dishPrices?.[activeDishId] 
+    ? restaurant.dishPrices[activeDishId] 
+    : restaurant.price;
+
   return (
     <>
       <motion.div 
@@ -60,16 +65,24 @@ export default function RestaurantCard({ restaurant, onAddReview, selectedDishes
               <span className="line-clamp-1">{restaurant.address}</span>
             </div>
           </div>
-          <div className={`px-2 py-1 rounded-lg border text-xs font-bold whitespace-nowrap ${getPriceColor(restaurant.price)}`}>
-            {restaurant.price.toLocaleString()} {t('som')}
+          <div className={`px-2 py-1 rounded-lg border text-xs font-bold whitespace-nowrap transition-colors ${getPriceColor(displayPrice)}`}>
+            {displayPrice.toLocaleString()} {t('som')}
           </div>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
           {restaurant.dishes.map(dishId => {
             const dish = DISH_TYPES.find(d => d.id === dishId);
+            const isSelected = selectedDishes.includes(dishId);
             return dish ? (
-              <span key={dishId} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-[10px] font-medium">
+              <span 
+                key={dishId} 
+                className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors ${
+                  isSelected 
+                    ? "bg-[#1D9E75] text-white" 
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
                 {t(dish.label)}
               </span>
             ) : null;

@@ -63,9 +63,10 @@ interface RestaurantDetailsModalProps {
   onClose: () => void;
   restaurant: Restaurant;
   onAddReview?: () => void;
+  selectedDishes?: string[];
 }
 
-export default function RestaurantDetailsModal({ isOpen, onClose, restaurant, onAddReview }: RestaurantDetailsModalProps) {
+export default function RestaurantDetailsModal({ isOpen, onClose, restaurant, onAddReview, selectedDishes = [] }: RestaurantDetailsModalProps) {
   const { t } = useTranslation();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -163,7 +164,11 @@ export default function RestaurantDetailsModal({ isOpen, onClose, restaurant, on
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
               <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{t('price')}</p>
-                <p className="text-sm font-bold text-gray-900">{restaurant.price.toLocaleString()} {t('som')}</p>
+                <p className="text-sm font-bold text-gray-900">
+                  {(selectedDishes.length === 1 && restaurant.dishPrices?.[selectedDishes[0]] 
+                    ? restaurant.dishPrices[selectedDishes[0]] 
+                    : restaurant.price).toLocaleString()} {t('som')}
+                </p>
               </div>
               <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{t('rating')}</p>
@@ -204,8 +209,16 @@ export default function RestaurantDetailsModal({ isOpen, onClose, restaurant, on
               <div className="flex flex-wrap gap-2">
                 {restaurant.dishes.map(dishId => {
                   const dish = DISH_TYPES.find(d => d.id === dishId);
+                  const isSelected = selectedDishes.includes(dishId);
                   return dish ? (
-                    <span key={dishId} className="px-3 py-1 bg-[#1D9E75]/10 text-[#1D9E75] rounded-full text-xs font-bold">
+                    <span 
+                      key={dishId} 
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
+                        isSelected 
+                          ? "bg-[#1D9E75] text-white shadow-sm" 
+                          : "bg-[#1D9E75]/10 text-[#1D9E75]"
+                      }`}
+                    >
                       {t(dish.label)}
                     </span>
                   ) : null;
