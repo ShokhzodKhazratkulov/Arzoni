@@ -18,7 +18,11 @@ service cloud.firestore {
              data.location.lat is number && data.location.lng is number &&
              data.createdAt is string &&
              (!('likes' in data) || data.likes is number) &&
-             (!('dislikes' in data) || data.dislikes is number);
+             (!('dislikes' in data) || data.dislikes is number) &&
+             (!('avgPrice' in data) || data.avgPrice is number) &&
+             (!('avgRating' in data) || data.avgRating is number) &&
+             (!('totalReviews' in data) || data.totalReviews is number) &&
+             (!('dishScore' in data) || data.dishScore is map);
     }
 
     function isValidReview(data) {
@@ -29,7 +33,8 @@ service cloud.firestore {
              data.restaurantId is string &&
              (!('likes' in data) || data.likes is number) &&
              (!('dislikes' in data) || data.dislikes is number) &&
-             (!('priceSpent' in data) || data.priceSpent is number);
+             (!('priceSpent' in data) || data.priceSpent is number) &&
+             (!('dishId' in data) || data.dishId is string);
     }
 
     match /restaurants/{restaurantId} {

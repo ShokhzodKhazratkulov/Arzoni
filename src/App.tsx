@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, addDoc, orderBy, doc, updateDoc, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
 import { seedDatabase } from './seed';
-import { Restaurant, SortOption } from './types';
+import { Restaurant, SortOption, Review } from './types';
 import { PRICE_RANGES } from './constants';
 import Navbar from './components/Navbar';
 import FilterBar from './components/FilterBar';
@@ -22,6 +22,7 @@ export default function App() {
   const [customPrice, setCustomPrice] = useState<number>(0);
   const [sortOption, setSortOption] = useState<SortOption>('price');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [initialRestaurantForModal, setInitialRestaurantForModal] = useState<Restaurant | null>(null);
 
   useEffect(() => {
     // Seed database with sample data if empty
@@ -62,6 +63,14 @@ export default function App() {
 
       return matchesDishes && matchesPrice;
     }).sort((a, b) => {
+      // If a single dish is selected, sort by dishScore for that dish
+      if (selectedDishes.length === 1) {
+        const dishId = selectedDishes[0];
+        const scoreA = a.dishScore?.[dishId] || 0;
+        const scoreB = b.dishScore?.[dishId] || 0;
+        if (scoreA !== scoreB) return scoreB - scoreA;
+      }
+
       if (sortOption === 'price') return a.price - b.price;
       if (sortOption === 'rating') return b.rating - a.rating;
       // Distance sorting would require user location, simplified for now
@@ -69,9 +78,26 @@ export default function App() {
     });
   }, [restaurants, selectedDishes, selectedPriceRange, customPrice, sortOption]);
 
+  const handleOpenReviewModal = (restaurant: Restaurant) => {
+    setInitialRestaurantForModal(restaurant);
+    setIsModalOpen(true);
+  };
+
   const handleAddRestaurant = async (data: any) => {
     try {
-      await addDoc(collection(db, 'restaurants'), data);
+      const restaurantData = {
+        ...data,
+        rating: 0,
+        avgRating: 0,
+        reviewCount: 0,
+        totalReviews: 0,
+        avgPrice: data.price, // Initial price estimate
+        likes: 0,
+        dislikes: 0,
+        dishScore: {},
+        createdAt: new Date().toISOString()
+      };
+      await addDoc(collection(db, 'restaurants'), restaurantData);
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error adding restaurant:", error);
@@ -82,23 +108,53 @@ export default function App() {
     try {
       // 1. Add review to subcollection
       const reviewsRef = collection(db, 'restaurants', restaurantId, 'reviews');
-      await addDoc(reviewsRef, reviewData);
+      await addDoc(reviewsRef, {
+        ...reviewData,
+        createdAt: new Date().toISOString(),
+        likes: 0,
+        dislikes: 0
+      });
 
-      // 2. Recalculate average rating
+      // 2. Recalculate all metrics
       const snapshot = await getDocs(reviewsRef);
-      const reviews = snapshot.docs.map(doc => doc.data());
+      const reviews = snapshot.docs.map(doc => doc.data()) as Review[];
       
+      const totalReviews = reviews.length;
       const totalRating = reviews.reduce((acc, curr) => acc + curr.rating, 0);
-      const avgRating = totalRating / reviews.length;
+      const avgRating = totalRating / totalReviews;
+      
+      const totalPrice = reviews.reduce((acc, curr) => acc + curr.priceSpent, 0);
+      const avgPrice = totalPrice / totalReviews;
 
-      // 3. Update parent document
+      // Calculate dishScore map (fraction of reviewers who ate each dish)
+      const dishCounts: { [dishId: string]: number } = {};
+      reviews.forEach(review => {
+        if (review.dishId) {
+          dishCounts[review.dishId] = (dishCounts[review.dishId] || 0) + 1;
+        }
+      });
+
+      const dishScore: { [dishId: string]: number } = {};
+      Object.keys(dishCounts).forEach(dishId => {
+        dishScore[dishId] = dishCounts[dishId] / totalReviews;
+      });
+
+      // 3. Update parent document with pre-computed fields
       const restaurantRef = doc(db, 'restaurants', restaurantId);
       await updateDoc(restaurantRef, {
         rating: avgRating,
-        reviewCount: reviews.length
+        avgRating: avgRating,
+        price: avgPrice,
+        avgPrice: avgPrice,
+        reviewCount: totalReviews,
+        totalReviews: totalReviews,
+        dishScore: dishScore,
+        // Also update the 'dishes' array to include any new dishes mentioned in reviews
+        dishes: Array.from(new Set([...(Object.keys(dishCounts))]))
       });
       
       setIsModalOpen(false);
+      setInitialRestaurantForModal(null);
     } catch (error) {
       console.error("Error adding review:", error);
     }
@@ -130,15 +186,21 @@ export default function App() {
             restaurants={filteredRestaurants}
             sortOption={sortOption}
             setSortOption={setSortOption}
+            onAddReview={handleOpenReviewModal}
+            selectedDishes={selectedDishes}
           />
         </div>
       </main>
 
       <AddRestaurantModal 
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setInitialRestaurantForModal(null);
+        }}
         onSubmit={handleAddRestaurant}
         onAddReview={handleAddReview}
+        initialRestaurant={initialRestaurantForModal}
       />
 
       {loading && (

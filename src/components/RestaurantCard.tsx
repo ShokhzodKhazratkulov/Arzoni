@@ -8,10 +8,12 @@ import RestaurantDetailsModal from './RestaurantDetailsModal';
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
+  onAddReview?: () => void;
   key?: string;
+  selectedDishes?: string[];
 }
 
-export default function RestaurantCard({ restaurant }: RestaurantCardProps) {
+export default function RestaurantCard({ restaurant, onAddReview, selectedDishes = [] }: RestaurantCardProps) {
   const { t } = useTranslation();
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -90,16 +92,12 @@ export default function RestaurantCard({ restaurant }: RestaurantCardProps) {
             <span className="text-[10px] text-gray-400 font-medium">
               {restaurant.reviewCount} reviews
             </span>
-            <div className="flex items-center gap-2 ml-1">
-              <div className="flex items-center gap-0.5 text-green-600">
-                <ThumbsUp size={10} />
-                <span className="text-[10px] font-bold">{restaurant.likes || 0}</span>
-              </div>
-              <div className="flex items-center gap-0.5 text-red-600">
-                <ThumbsDown size={10} />
-                <span className="text-[10px] font-bold">{restaurant.dislikes || 0}</span>
-              </div>
-            </div>
+            {/* Show dish score if a single dish is filtered */}
+            {selectedDishes.length === 1 && restaurant.dishScore?.[selectedDishes[0]] !== undefined && (
+               <div className="flex items-center gap-1 bg-[#1D9E75]/10 text-[#1D9E75] px-1.5 py-0.5 rounded text-[10px] font-bold">
+                 <span>{t('popularity')}: {Math.round((restaurant.dishScore[selectedDishes[0]] || 0) * 100)}%</span>
+               </div>
+            )}
           </div>
           
           <a 
@@ -118,6 +116,7 @@ export default function RestaurantCard({ restaurant }: RestaurantCardProps) {
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
         restaurant={restaurant}
+        onAddReview={onAddReview}
       />
     </>
   );

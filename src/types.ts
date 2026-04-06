@@ -10,9 +10,12 @@ export interface Restaurant {
   name: string;
   address: string;
   dishes: string[];
-  price: number;
-  rating: number; // This will be the average rating
+  price: number; // This will be the initial price or the computed avgPrice
+  avgPrice?: number;
+  rating: number; // This will be the computed avgRating
+  avgRating?: number;
   reviewCount: number;
+  totalReviews?: number;
   description: string;
   submitter?: string;
   location: Location;
@@ -20,6 +23,7 @@ export interface Restaurant {
   photoUrl?: string;
   likes: number;
   dislikes: number;
+  dishScore?: { [dishId: string]: number };
 }
 
 export interface Review {
@@ -32,7 +36,8 @@ export interface Review {
   photoUrl?: string;
   likes: number;
   dislikes: number;
-  priceSpent?: number;
+  priceSpent: number;
+  dishId: string;
 }
 
 export type SortOption = 'price' | 'rating' | 'distance';

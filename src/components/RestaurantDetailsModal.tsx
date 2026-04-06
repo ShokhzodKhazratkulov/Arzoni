@@ -62,9 +62,10 @@ interface RestaurantDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   restaurant: Restaurant;
+  onAddReview?: () => void;
 }
 
-export default function RestaurantDetailsModal({ isOpen, onClose, restaurant }: RestaurantDetailsModalProps) {
+export default function RestaurantDetailsModal({ isOpen, onClose, restaurant, onAddReview }: RestaurantDetailsModalProps) {
   const { t } = useTranslation();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -215,11 +216,20 @@ export default function RestaurantDetailsModal({ isOpen, onClose, restaurant }: 
             {/* Reviews Section */}
             <div className="border-t border-gray-100 pt-8">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-gray-900">{t('communityReviews')}</h3>
-                <div className="flex items-center gap-1 text-[#1D9E75] text-sm font-bold">
-                  <Star size={16} className="fill-[#1D9E75]" />
-                  <span>{restaurant.rating.toFixed(1)} / 5</span>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">{t('communityReviews')}</h3>
+                  <div className="flex items-center gap-1 text-[#1D9E75] text-sm font-bold mt-1">
+                    <Star size={16} className="fill-[#1D9E75]" />
+                    <span>{restaurant.rating.toFixed(1)} / 5</span>
+                  </div>
                 </div>
+                <button
+                  onClick={() => onAddReview?.()}
+                  className="bg-[#1D9E75] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-[#168a65] transition-all flex items-center gap-2"
+                >
+                  <Star size={14} className="fill-white" />
+                  {t('addReview')}
+                </button>
               </div>
 
               {loading ? (
@@ -246,6 +256,14 @@ export default function RestaurantDetailsModal({ isOpen, onClose, restaurant }: 
                             <p className="text-[10px] text-gray-400">
                               {new Date(review.createdAt).toLocaleDateString()}
                               {review.priceSpent ? ` • ${review.priceSpent.toLocaleString()} ${t('som')}` : ''}
+                              {review.dishId && (
+                                <>
+                                  {' • '}
+                                  <span className="text-[#1D9E75] font-bold">
+                                    {t(DISH_TYPES.find(d => d.id === review.dishId)?.label || '')}
+                                  </span>
+                                </>
+                              )}
                             </p>
                           </div>
                         </div>

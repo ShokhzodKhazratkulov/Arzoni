@@ -8,9 +8,12 @@
         "name": { "type": "string", "description": "Name of the restaurant" },
         "address": { "type": "string", "description": "Address in Tashkent or city name" },
         "dishes": { "type": "array", "items": { "type": "string" }, "description": "List of dishes served" },
-        "price": { "type": "number", "description": "Average price per meal in so'm" },
-        "rating": { "type": "number", "description": "Average star rating" },
-        "reviewCount": { "type": "number", "description": "Number of reviews" },
+        "price": { "type": "number", "description": "Average price per meal in so'm (computed)" },
+        "avgPrice": { "type": "number", "description": "Average price per meal in so'm (computed)" },
+        "rating": { "type": "number", "description": "Average star rating (computed)" },
+        "avgRating": { "type": "number", "description": "Average star rating (computed)" },
+        "reviewCount": { "type": "number", "description": "Number of reviews (computed)" },
+        "totalReviews": { "type": "number", "description": "Number of reviews (computed)" },
         "description": { "type": "string", "description": "Short description of the spot" },
         "submitter": { "type": "string", "description": "Name of the person who submitted (optional)" },
         "location": {
@@ -23,7 +26,8 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "photoUrl": { "type": "string", "description": "Optional photo URL" },
         "likes": { "type": "number" },
-        "dislikes": { "type": "number" }
+        "dislikes": { "type": "number" },
+        "dishScore": { "type": "object", "description": "Map of dishId to fraction of reviewers who ate it" }
       },
       "required": ["name", "address", "dishes", "price", "location"]
     },
@@ -40,7 +44,8 @@
         "photoUrl": { "type": "string" },
         "likes": { "type": "number" },
         "dislikes": { "type": "number" },
-        "priceSpent": { "type": "number", "description": "Amount spent by the user" }
+        "priceSpent": { "type": "number", "description": "Amount spent by the user" },
+        "dishId": { "type": "string", "description": "ID of the dish the user ate" }
       },
       "required": ["rating", "comment", "submitter", "createdAt"]
     }

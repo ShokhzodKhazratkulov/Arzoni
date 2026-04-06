@@ -7,9 +7,11 @@ interface RestaurantListProps {
   restaurants: Restaurant[];
   sortOption: SortOption;
   setSortOption: (option: SortOption) => void;
+  onAddReview: (restaurant: Restaurant) => void;
+  selectedDishes: string[];
 }
 
-export default function RestaurantList({ restaurants, sortOption, setSortOption }: RestaurantListProps) {
+export default function RestaurantList({ restaurants, sortOption, setSortOption, onAddReview, selectedDishes }: RestaurantListProps) {
   const { t } = useTranslation();
 
   return (
@@ -43,7 +45,12 @@ export default function RestaurantList({ restaurants, sortOption, setSortOption 
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {restaurants.map(restaurant => (
-            <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+            <RestaurantCard 
+              key={restaurant.id} 
+              restaurant={restaurant} 
+              onAddReview={() => onAddReview(restaurant)}
+              selectedDishes={selectedDishes}
+            />
           ))}
         </div>
       )}

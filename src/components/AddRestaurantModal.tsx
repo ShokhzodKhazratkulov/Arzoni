@@ -14,9 +14,10 @@ interface AddRestaurantModalProps {
   onClose: () => void;
   onSubmit: (data: any) => void;
   onAddReview: (restaurantId: string, reviewData: any) => void;
+  initialRestaurant?: Restaurant | null;
 }
 
-export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddReview }: AddRestaurantModalProps) {
+export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddReview, initialRestaurant }: AddRestaurantModalProps) {
   const { t } = useTranslation();
   const apiKey = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || '';
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -27,6 +28,8 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
   const [isSearching, setIsSearching] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
+
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -42,11 +45,19 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
     rating: 5,
     comment: '',
     submitter: '',
-    priceSpent: 0
+    priceSpent: 0,
+    dishId: ''
   });
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      if (initialRestaurant) {
+        setSelectedRestaurant(initialRestaurant);
+        setMode('review');
+      } else {
+        setMode('search');
+      }
+    } else {
       setMode('search');
       setSearchTerm('');
       setSuggestions([]);
@@ -65,10 +76,11 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
         rating: 5,
         comment: '',
         submitter: '',
-        priceSpent: 0
+        priceSpent: 0,
+        dishId: ''
       });
     }
-  }, [isOpen]);
+  }, [isOpen, initialRestaurant]);
 
   useEffect(() => {
     const searchRestaurants = async () => {
@@ -122,13 +134,17 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
   const handleRecenter = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
+        const newLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
         setFormData({
           ...formData,
-          location: {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          }
+          location: newLocation
         });
+        if (mapRef.current) {
+          mapRef.current.panTo(newLocation);
+        }
       });
     }
   };
@@ -289,6 +305,22 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
       </div>
 
       <div className="space-y-1">
+        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('whatDidYouEat') || "What did you eat?"}</label>
+        <select
+          value={reviewData.dishId}
+          onChange={(e) => setReviewData({ ...reviewData, dishId: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1D9E75] focus:outline-none bg-white"
+        >
+          <option value="">{t('selectDish') || "Select a dish..."}</option>
+          {DISH_TYPES.map((dish) => (
+            <option key={dish.id} value={dish.id}>
+              {t(dish.label)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="space-y-1">
         <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('yourComment') || "Your Comment"}</label>
         <textarea
           required
@@ -313,7 +345,9 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
         <div className="space-y-1">
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('priceSpent')}</label>
           <input
+            required
             type="number"
+            min="0"
             value={reviewData.priceSpent || ''}
             onChange={(e) => setReviewData({ ...reviewData, priceSpent: Number(e.target.value) })}
             className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1D9E75] focus:outline-none"
@@ -404,10 +438,13 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
         <div className="h-[180px] w-full rounded-xl overflow-hidden border border-gray-200 relative">
           <APIProvider apiKey={apiKey}>
             <Map
-              center={formData.location}
+              defaultCenter={formData.location}
               defaultZoom={13}
               mapId="ADD_RESTAURANT_MAP"
               onClick={handleMapClick}
+              onIdle={(e) => {
+                mapRef.current = e.map;
+              }}
               disableDefaultUI={true}
               zoomControl={true}
               gestureHandling={'greedy'}
@@ -420,7 +457,7 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
           <button
             type="button"
             onClick={handleRecenter}
-            className="absolute bottom-4 right-4 p-2 bg-white rounded-full shadow-lg border border-gray-200 text-[#1D9E75] hover:bg-gray-50 transition-all z-10"
+            className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg border border-gray-200 text-[#1D9E75] hover:bg-gray-50 transition-all z-10"
             title={t('findNearMe')}
           >
             <MapPin size={20} />
