@@ -32,6 +32,7 @@ export interface Review {
   photoUrl?: string;
   likes: number;
   dislikes: number;
+  priceSpent?: number;
 }
 
 export type SortOption = 'price' | 'rating' | 'distance';

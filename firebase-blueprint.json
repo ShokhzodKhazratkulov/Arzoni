@@ -39,7 +39,8 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "photoUrl": { "type": "string" },
         "likes": { "type": "number" },
-        "dislikes": { "type": "number" }
+        "dislikes": { "type": "number" },
+        "priceSpent": { "type": "number", "description": "Amount spent by the user" }
       },
       "required": ["rating", "comment", "submitter", "createdAt"]
     }

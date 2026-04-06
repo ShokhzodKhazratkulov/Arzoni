@@ -28,7 +28,8 @@ service cloud.firestore {
              data.createdAt is string &&
              data.restaurantId is string &&
              (!('likes' in data) || data.likes is number) &&
-             (!('dislikes' in data) || data.dislikes is number);
+             (!('dislikes' in data) || data.dislikes is number) &&
+             (!('priceSpent' in data) || data.priceSpent is number);
     }
 
     match /restaurants/{restaurantId} {

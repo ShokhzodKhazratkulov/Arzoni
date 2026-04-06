@@ -56,6 +56,7 @@ const resources = {
       popularDishes: "Popular Dishes",
       communityReviews: "Community Reviews",
       anonymous: "Anonymous",
+      priceSpent: "Amount Spent (so'm)",
       dishes: {
         osh: "Osh",
         manti: "Manti",
@@ -126,6 +127,7 @@ const resources = {
       popularDishes: "Mashhur taomlar",
       communityReviews: "Hamjamiyat sharhlari",
       anonymous: "Anonim",
+      priceSpent: "Sarflangan summa (so'm)",
       dishes: {
         osh: "Osh",
         manti: "Manti",
@@ -196,6 +198,7 @@ const resources = {
       popularDishes: "Популярные блюда",
       communityReviews: "Отзывы сообщества",
       anonymous: "Анонимно",
+      priceSpent: "Потраченная сумма (сум)",
       dishes: {
         osh: "Плов",
         manti: "Манты",

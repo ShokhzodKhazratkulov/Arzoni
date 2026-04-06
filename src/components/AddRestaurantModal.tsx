@@ -41,7 +41,8 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
   const [reviewData, setReviewData] = useState({
     rating: 5,
     comment: '',
-    submitter: ''
+    submitter: '',
+    priceSpent: 0
   });
 
   useEffect(() => {
@@ -63,7 +64,8 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
       setReviewData({
         rating: 5,
         comment: '',
-        submitter: ''
+        submitter: '',
+        priceSpent: 0
       });
     }
   }, [isOpen]);
@@ -114,6 +116,20 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
       setFormData({ ...formData, dishes: formData.dishes.filter(d => d !== id) });
     } else {
       setFormData({ ...formData, dishes: [...formData.dishes, id] });
+    }
+  };
+
+  const handleRecenter = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        setFormData({
+          ...formData,
+          location: {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          }
+        });
+      });
     }
   };
 
@@ -283,15 +299,27 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
         />
       </div>
 
-      <div className="space-y-1">
-        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('formSubmitter')}</label>
-        <input
-          required
-          type="text"
-          value={reviewData.submitter}
-          onChange={(e) => setReviewData({ ...reviewData, submitter: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1D9E75] focus:outline-none"
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('formSubmitter')}</label>
+          <input
+            required
+            type="text"
+            value={reviewData.submitter}
+            onChange={(e) => setReviewData({ ...reviewData, submitter: e.target.value })}
+            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1D9E75] focus:outline-none"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('priceSpent')}</label>
+          <input
+            type="number"
+            value={reviewData.priceSpent || ''}
+            onChange={(e) => setReviewData({ ...reviewData, priceSpent: Number(e.target.value) })}
+            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1D9E75] focus:outline-none"
+            placeholder="0"
+          />
+        </div>
       </div>
 
       {renderPhotoSection()}
@@ -373,10 +401,10 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
           <MapPin size={12} />
           {t('selectOnMap') || "Select Location on Map"}
         </label>
-        <div className="h-[180px] w-full rounded-xl overflow-hidden border border-gray-200">
+        <div className="h-[180px] w-full rounded-xl overflow-hidden border border-gray-200 relative">
           <APIProvider apiKey={apiKey}>
             <Map
-              defaultCenter={TASHKENT_CENTER}
+              center={formData.location}
               defaultZoom={13}
               mapId="ADD_RESTAURANT_MAP"
               onClick={handleMapClick}
@@ -389,6 +417,14 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
               </AdvancedMarker>
             </Map>
           </APIProvider>
+          <button
+            type="button"
+            onClick={handleRecenter}
+            className="absolute bottom-4 right-4 p-2 bg-white rounded-full shadow-lg border border-gray-200 text-[#1D9E75] hover:bg-gray-50 transition-all z-10"
+            title={t('findNearMe')}
+          >
+            <MapPin size={20} />
+          </button>
         </div>
       </div>
 

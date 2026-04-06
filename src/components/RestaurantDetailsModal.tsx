@@ -245,6 +245,7 @@ export default function RestaurantDetailsModal({ isOpen, onClose, restaurant }: 
                             <p className="text-sm font-bold text-gray-900">{review.submitter || t('anonymous')}</p>
                             <p className="text-[10px] text-gray-400">
                               {new Date(review.createdAt).toLocaleDateString()}
+                              {review.priceSpent ? ` • ${review.priceSpent.toLocaleString()} ${t('som')}` : ''}
                             </p>
                           </div>
                         </div>
