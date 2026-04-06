@@ -24,8 +24,8 @@ export default function RestaurantCard({ restaurant, onAddReview, selectedDishes
   };
 
   const activeDishId = selectedDishes.length === 1 ? selectedDishes[0] : null;
-  const displayPrice = activeDishId && restaurant.dishPrices?.[activeDishId] 
-    ? restaurant.dishPrices[activeDishId] 
+  const displayPrice = activeDishId && restaurant.dishStats?.[activeDishId] 
+    ? restaurant.dishStats[activeDishId].avgPrice 
     : restaurant.price;
 
   return (
@@ -66,7 +66,7 @@ export default function RestaurantCard({ restaurant, onAddReview, selectedDishes
             </div>
           </div>
           <div className={`px-2 py-1 rounded-lg border text-xs font-bold whitespace-nowrap transition-colors ${getPriceColor(displayPrice)}`}>
-            {displayPrice.toLocaleString()} {t('som')}
+            {Math.round(displayPrice).toLocaleString()} {t('som')}
           </div>
         </div>
 
@@ -100,7 +100,7 @@ export default function RestaurantCard({ restaurant, onAddReview, selectedDishes
               onClick={() => setIsDetailsOpen(true)}
             >
               <Star size={14} className="text-yellow-400 fill-yellow-400" />
-              <span className="text-xs font-bold text-gray-900">{restaurant.rating}</span>
+              <span className="text-xs font-bold text-gray-900">{restaurant.rating.toFixed(1)}</span>
             </div>
             <span className="text-[10px] text-gray-400 font-medium">
               {restaurant.reviewCount} reviews

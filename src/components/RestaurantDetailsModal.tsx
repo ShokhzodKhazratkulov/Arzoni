@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { X, Star, MapPin, Navigation, User, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Restaurant, Review } from '../types';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, increment, getDoc } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, increment } from 'firebase/firestore';
+import { db } from '../firebase';
 import { DISH_TYPES } from '../constants';
 
 enum OperationType {
@@ -20,37 +20,11 @@ interface FirestoreErrorInfo {
   error: string;
   operationType: OperationType;
   path: string | null;
-  authInfo: {
-    userId: string | undefined;
-    email: string | null | undefined;
-    emailVerified: boolean | undefined;
-    isAnonymous: boolean | undefined;
-    tenantId: string | null | undefined;
-    providerInfo: {
-      providerId: string;
-      displayName: string | null;
-      email: string | null;
-      photoUrl: string | null;
-    }[];
-  }
 }
 
 function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData.map(provider => ({
-        providerId: provider.providerId,
-        displayName: provider.displayName,
-        email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
-    },
     operationType,
     path
   }
@@ -86,7 +60,7 @@ export default function RestaurantDetailsModal({ isOpen, onClose, restaurant, on
       setReviews(reviewsData);
       setLoading(false);
     }, (error) => {
-      console.error("Error fetching reviews:", error);
+      handleFirestoreError(error, OperationType.LIST, reviewsRef.path);
       setLoading(false);
     });
 
@@ -165,8 +139,8 @@ export default function RestaurantDetailsModal({ isOpen, onClose, restaurant, on
               <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{t('price')}</p>
                 <p className="text-sm font-bold text-gray-900">
-                  {(selectedDishes.length === 1 && restaurant.dishPrices?.[selectedDishes[0]] 
-                    ? restaurant.dishPrices[selectedDishes[0]] 
+                  {Math.round(selectedDishes.length === 1 && restaurant.dishStats?.[selectedDishes[0]] 
+                    ? restaurant.dishStats[selectedDishes[0]].avgPrice 
                     : restaurant.price).toLocaleString()} {t('som')}
                 </p>
               </div>
@@ -282,7 +256,7 @@ export default function RestaurantDetailsModal({ isOpen, onClose, restaurant, on
                         </div>
                         <div className="flex items-center gap-0.5 px-2 py-1 bg-white rounded-lg border border-gray-200 shadow-sm">
                           <Star size={12} className="text-yellow-400 fill-yellow-400" />
-                          <span className="text-xs font-bold text-gray-900">{review.rating}</span>
+                          <span className="text-xs font-bold text-gray-900">{review.rating.toFixed(1)}</span>
                         </div>
                       </div>
                       

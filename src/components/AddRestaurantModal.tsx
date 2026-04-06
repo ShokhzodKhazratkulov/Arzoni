@@ -9,6 +9,31 @@ import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Restaurant } from '../types';
 
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
 interface AddRestaurantModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -102,7 +127,7 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
         const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Restaurant[];
         setSuggestions(results);
       } catch (error) {
-        console.error("Search error:", error);
+        handleFirestoreError(error, OperationType.LIST, 'restaurants');
       } finally {
         setIsSearching(false);
       }

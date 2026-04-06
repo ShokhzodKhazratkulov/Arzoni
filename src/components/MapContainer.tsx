@@ -17,9 +17,10 @@ import RestaurantDetailsModal from './RestaurantDetailsModal';
 interface MapContainerProps {
   restaurants: Restaurant[];
   onAddRestaurant: () => void;
+  selectedDishes?: string[];
 }
 
-const MapContent = ({ restaurants, onAddRestaurant }: MapContainerProps) => {
+const MapContent = ({ restaurants, onAddRestaurant, selectedDishes = [] }: MapContainerProps) => {
   const { t } = useTranslation();
   const map = useMap();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -120,7 +121,9 @@ const MapContent = ({ restaurants, onAddRestaurant }: MapContainerProps) => {
                   onClick={() => setIsDetailsOpen(true)}
                   className="text-[10px] font-bold text-[#1D9E75] hover:underline"
                 >
-                  {selectedRestaurant.price.toLocaleString()} {t('som')}
+                  {Math.round(selectedDishes.length === 1 && selectedRestaurant.dishStats?.[selectedDishes[0]] 
+                    ? selectedRestaurant.dishStats[selectedDishes[0]].avgPrice 
+                    : selectedRestaurant.price).toLocaleString()} {t('som')}
                 </button>
                 <a 
                   href={`https://www.google.com/maps/dir/?api=1&destination=${selectedRestaurant.location.lat},${selectedRestaurant.location.lng}`}

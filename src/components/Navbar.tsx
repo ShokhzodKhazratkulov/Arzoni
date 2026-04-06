@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Globe, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { Language } from '../types';
 
 export default function Navbar() {
@@ -57,8 +57,12 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Placeholder for grid symmetry on desktop */}
-        <div className="hidden sm:block"></div>
+        {/* Right side - Empty for now or could add search/etc */}
+        <div className="hidden sm:flex items-center justify-end">
+          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            {t('communityMap') || "Community Map"}
+          </div>
+        </div>
       </div>
     </nav>
   );
