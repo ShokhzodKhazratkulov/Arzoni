@@ -296,6 +296,7 @@ export default function App() {
         .insert([restaurantData]);
 
       if (error) throw error;
+      console.log('Restaurant added successfully!');
       setIsModalOpen(false);
     } catch (error) {
       console.error('Error adding restaurant:', error);
@@ -394,7 +395,7 @@ export default function App() {
         .eq('id', restaurantId);
 
       if (updateError) throw updateError;
-      
+      console.log('Review added and restaurant metrics updated successfully!');
       setIsModalOpen(false);
       setInitialRestaurantForModal(null);
     } catch (error) {
