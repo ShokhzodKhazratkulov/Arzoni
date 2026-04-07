@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from 'react';
 import { collection, onSnapshot, query, addDoc, orderBy, doc, updateDoc, getDocs } from 'firebase/firestore';
-import { db } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from './firebase';
 import { seedDatabase } from './seed';
 import { Restaurant, SortOption, Review } from './types';
 import { PRICE_RANGES } from './constants';
@@ -177,6 +178,12 @@ export default function App() {
     setIsModalOpen(true);
   };
 
+  const uploadImage = async (file: File, path: string) => {
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
+  };
+
   const handleAddRestaurant = async (data: any) => {
     try {
       // Check for duplicates first
@@ -190,8 +197,17 @@ export default function App() {
         return;
       }
 
+      setLoading(true);
+      let photoUrl = '';
+      if (data.photoFile) {
+        const timestamp = new Date().getTime();
+        photoUrl = await uploadImage(data.photoFile, `restaurants/${timestamp}`);
+      }
+
+      const { photoFile, ...restData } = data;
       const restaurantData = {
-        ...data,
+        ...restData,
+        photoUrl,
         rating: 0,
         avgRating: 0,
         reviewCount: 0,
@@ -206,6 +222,8 @@ export default function App() {
       setIsModalOpen(false);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'restaurants');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -213,10 +231,19 @@ export default function App() {
     const reviewsPath = `restaurants/${restaurantId}/reviews`;
     const restaurantPath = `restaurants/${restaurantId}`;
     try {
+      setLoading(true);
+      let photoUrl = '';
+      if (reviewData.photoFile) {
+        const timestamp = new Date().getTime();
+        photoUrl = await uploadImage(reviewData.photoFile, `reviews/${restaurantId}/${timestamp}`);
+      }
+
+      const { photoFile, ...restReviewData } = reviewData;
       // 1. Add review to subcollection
       const reviewsRef = collection(db, 'restaurants', restaurantId, 'reviews');
       await addDoc(reviewsRef, {
-        ...reviewData,
+        ...restReviewData,
+        photoUrl,
         createdAt: new Date().toISOString(),
         likes: 0,
         dislikes: 0
@@ -277,6 +304,8 @@ export default function App() {
       setInitialRestaurantForModal(null);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, reviewsPath);
+    } finally {
+      setLoading(false);
     }
   };
 

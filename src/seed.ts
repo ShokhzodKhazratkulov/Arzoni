@@ -17,14 +17,16 @@ interface FirestoreErrorInfo {
   path: string | null;
 }
 
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null, shouldThrow: boolean = true) {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     operationType,
     path
   }
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  if (shouldThrow) {
+    throw new Error(JSON.stringify(errInfo));
+  }
 }
 
 const SAMPLE_RESTAURANTS = [
@@ -219,7 +221,7 @@ export async function seedDatabase() {
           try {
             await deleteDoc(doc(db, 'restaurants', docSnapshot.id));
           } catch (error) {
-            handleFirestoreError(error, OperationType.DELETE, `restaurants/${docSnapshot.id}`);
+            handleFirestoreError(error, OperationType.DELETE, `restaurants/${docSnapshot.id}`, false);
           }
           continue;
         }
@@ -252,12 +254,12 @@ export async function seedDatabase() {
               dishStats: stats
             });
           } catch (error) {
-            handleFirestoreError(error, OperationType.UPDATE, `restaurants/${docSnapshot.id}`);
+            handleFirestoreError(error, OperationType.UPDATE, `restaurants/${docSnapshot.id}`, false);
           }
         }
       }
     }
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'restaurants');
+    handleFirestoreError(error, OperationType.LIST, 'restaurants', false);
   }
 }

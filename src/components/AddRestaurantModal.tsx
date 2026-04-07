@@ -53,6 +53,7 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
   const [isSearching, setIsSearching] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -88,6 +89,7 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
       setSuggestions([]);
       setSelectedRestaurant(null);
       setPhoto(null);
+      setPhotoFile(null);
       setFormData({
         name: '',
         address: '',
@@ -140,6 +142,7 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
   const handleCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhoto(reader.result as string);
@@ -193,7 +196,7 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
       onAddReview(selectedRestaurant.id, {
         ...reviewData,
         restaurantId: selectedRestaurant.id,
-        photoUrl: photo,
+        photoFile: photoFile, // Pass the file object
         createdAt: new Date().toISOString(),
         likes: 0,
         dislikes: 0
@@ -206,7 +209,7 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
         reviewCount: 0,
         likes: 0,
         dislikes: 0,
-        photoUrl: photo,
+        photoFile: photoFile, // Pass the file object
         createdAt: new Date().toISOString()
       });
     }
@@ -397,7 +400,10 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
             <img src={photo} alt="Captured" className="w-full h-full object-cover" />
             <button
               type="button"
-              onClick={() => setPhoto(null)}
+              onClick={() => {
+                setPhoto(null);
+                setPhotoFile(null);
+              }}
               className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
             >
               <X size={20} />
