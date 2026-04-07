@@ -334,6 +334,15 @@ export default function App() {
       if (reviewError) throw reviewError;
 
       // 2. Recalculate all metrics
+      // Fetch the restaurant to get its initial price
+      const { data: restaurant, error: restFetchError } = await supabase
+        .from('restaurants')
+        .select('price, name')
+        .eq('id', restaurantId)
+        .single();
+
+      if (restFetchError) throw restFetchError;
+
       const { data: reviewsData, error: fetchError } = await supabase
         .from('reviews')
         .select('*')
@@ -347,12 +356,13 @@ export default function App() {
         dishId: r.dish_id
       }));
 
-      const totalReviews = reviews.length;
+      const reviewCount = reviews.length;
       const totalRating = reviews.reduce((acc, curr) => acc + curr.rating, 0);
-      const avgRating = totalRating / totalReviews;
+      const avgRating = totalRating / reviewCount;
       
-      const totalPrice = reviews.reduce((acc, curr) => acc + curr.priceSpent, 0);
-      const avgPrice = totalPrice / totalReviews;
+      // Include initial price in the average calculation
+      const totalPrice = reviews.reduce((acc, curr) => acc + curr.priceSpent, 0) + restaurant.price;
+      const avgPrice = Math.round(totalPrice / (reviewCount + 1));
 
       const dishCounts: { [dishId: string]: number } = {};
       const dishGroupedPrices: { [dishId: string]: number[] } = {};
@@ -366,15 +376,21 @@ export default function App() {
       });
 
       const dishScore: { [dishId: string]: number } = {};
-      const dishStats: { [dishId: string]: { avgPrice: number; reviewCount: number } } = {};
+      const dishStats: { [dishId: string]: { avgPrice: number; reviewCount: number; bestComment?: string } } = {};
       
       Object.keys(dishCounts).forEach(dishId => {
-        dishScore[dishId] = dishCounts[dishId] / totalReviews;
+        dishScore[dishId] = dishCounts[dishId] / reviewCount;
         const prices = dishGroupedPrices[dishId];
-        const avgDishPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+        const avgDishPrice = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+        
+        // Find the best comment (most liked review) for this dish
+        const dishReviews = reviews.filter(r => r.dishId === dishId);
+        const bestReview = dishReviews.reduce((prev, curr) => (curr.likes || 0) > (prev.likes || 0) ? curr : prev, dishReviews[0]);
+        
         dishStats[dishId] = {
           avgPrice: avgDishPrice,
-          reviewCount: dishCounts[dishId]
+          reviewCount: dishCounts[dishId],
+          bestComment: bestReview?.comment
         };
       });
 
@@ -384,10 +400,10 @@ export default function App() {
         .update({
           rating: avgRating,
           avg_rating: avgRating,
-          price: avgPrice,
+          // We preserve 'price' as the official price written by the user
           avg_price: avgPrice,
-          review_count: totalReviews,
-          total_reviews: totalReviews,
+          review_count: reviewCount,
+          total_reviews: reviewCount,
           dish_score: dishScore,
           dish_stats: dishStats,
           dishes: Array.from(new Set([...(Object.keys(dishCounts))]))

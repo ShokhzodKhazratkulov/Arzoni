@@ -29,6 +29,7 @@ export interface Restaurant {
     [dishId: string]: {
       avgPrice: number;
       reviewCount: number;
+      bestComment?: string;
     }
   };
 }

@@ -166,11 +166,16 @@ export default function RestaurantDetailsModal({ isOpen, onClose, restaurant, on
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
               <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{t('price')}</p>
-                <p className="text-sm font-bold text-gray-900">
+                <p className="text-sm font-black text-gray-900">
                   {Math.round(selectedDishes.length === 1 && restaurant.dishStats?.[selectedDishes[0]] 
                     ? restaurant.dishStats[selectedDishes[0]].avgPrice 
                     : restaurant.price).toLocaleString()} {t('som')}
                 </p>
+                {restaurant.avgPrice && Math.round(restaurant.avgPrice) !== Math.round(restaurant.price) && (
+                  <p className="text-[9px] text-[#1D9E75] font-bold mt-0.5">
+                    Avg: {Math.round(restaurant.avgPrice).toLocaleString()}
+                  </p>
+                )}
               </div>
               <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{t('rating')}</p>

@@ -48,9 +48,9 @@ const SAMPLE_RESTAURANTS = [
     dishScore: { "osh": 0.9, "shorva": 0.05, "somsa": 0.05 },
     dishPrices: { "osh": 28000, "shorva": 22000, "somsa": 8000 },
     dishStats: {
-      "osh": { avgPrice: 28000, reviewCount: 1100 },
-      "shorva": { avgPrice: 22000, reviewCount: 100 },
-      "somsa": { avgPrice: 8000, reviewCount: 50 }
+      "osh": { avgPrice: 28000, reviewCount: 1100, bestComment: "Eng mazali palov shu yerda! Go'shti yumshoq va seryog'." },
+      "shorva": { avgPrice: 22000, reviewCount: 100, bestComment: "Issiq va mazali shorva, ayniqsa qishda juda ketadi." },
+      "somsa": { avgPrice: 8000, reviewCount: 50, bestComment: "Tandir somsa juda mazali, ichi sershira." }
     }
   },
   {
@@ -72,8 +72,8 @@ const SAMPLE_RESTAURANTS = [
     dishScore: { "somsa": 0.95, "nonChoy": 0.05 },
     dishPrices: { "somsa": 12000, "nonChoy": 5000 },
     dishStats: {
-      "somsa": { avgPrice: 12000, reviewCount: 420 },
-      "nonChoy": { avgPrice: 5000, reviewCount: 30 }
+      "somsa": { avgPrice: 12000, reviewCount: 420, bestComment: "Somsa juda issiq va mazali ekan, tavsiya qilaman!" },
+      "nonChoy": { avgPrice: 5000, reviewCount: 30, bestComment: "Choy va issiq non - eng yaxshi nonushta." }
     }
   },
   {
@@ -95,8 +95,8 @@ const SAMPLE_RESTAURANTS = [
     dishScore: { "lagmon": 0.8, "chuchvara": 0.2 },
     dishPrices: { "lagmon": 32000, "chuchvara": 25000 },
     dishStats: {
-      "lagmon": { avgPrice: 32000, reviewCount: 250 },
-      "chuchvara": { avgPrice: 25000, reviewCount: 70 }
+      "lagmon": { avgPrice: 32000, reviewCount: 250, bestComment: "Lag'mon xamiri juda cho'ziluvchan va mazali." },
+      "chuchvara": { avgPrice: 25000, reviewCount: 70, bestComment: "Chuchvaralar kichkina va juda mazali tugilgan." }
     }
   },
   {
