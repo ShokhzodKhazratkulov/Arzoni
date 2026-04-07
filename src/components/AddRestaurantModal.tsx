@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Check, MapPin, Camera, Star, Search, Loader2 } from 'lucide-react';
+import { X, Check, MapPin, Camera, Star, Search, Loader2, AlertTriangle } from 'lucide-react';
 import { DISH_TYPES, TASHKENT_CENTER } from '../constants';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -54,6 +54,7 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -142,6 +143,11 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
   const handleCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setLocalError(t('imageTooLarge') || "Image is too large. Please select an image smaller than 5MB.");
+        return;
+      }
+      setLocalError(null);
       setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -575,7 +581,14 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto">
+            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6">
+              {localError && (
+                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm">
+                  <AlertTriangle size={18} className="shrink-0" />
+                  <p>{localError}</p>
+                </div>
+              )}
+              
               {mode === 'search' && renderSearch()}
               {mode === 'review' && renderReview()}
               {mode === 'add' && renderAdd()}

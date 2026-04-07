@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from 'react';
 import { collection, onSnapshot, query, addDoc, orderBy, doc, updateDoc, getDocs } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import imageCompression from 'browser-image-compression';
 import { db, storage } from './firebase';
 import { seedDatabase } from './seed';
 import { Restaurant, SortOption, Review } from './types';
@@ -14,6 +15,7 @@ import AddRestaurantModal from './components/AddRestaurantModal';
 import './i18n';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
+import { motion } from 'motion/react';
 
 // Error Boundary Component
 interface ErrorBoundaryProps {
@@ -107,6 +109,8 @@ export default function App() {
   const [sortOption, setSortOption] = useState<SortOption>('price');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [initialRestaurantForModal, setInitialRestaurantForModal] = useState<Restaurant | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -179,9 +183,62 @@ export default function App() {
   };
 
   const uploadImage = async (file: File, path: string) => {
+    console.log(`Starting upload to ${path}...`);
+    
+    // Image compression options
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+    };
+
+    let fileToUpload = file;
+    try {
+      console.log('Compressing image...');
+      fileToUpload = await imageCompression(file, options);
+      console.log(`Compression complete. Original size: ${file.size / 1024 / 1024}MB, New size: ${fileToUpload.size / 1024 / 1024}MB`);
+    } catch (error) {
+      console.error('Compression failed, uploading original:', error);
+    }
+
     const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
+    const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    return new Promise<string>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        uploadTask.cancel();
+        setIsUploading(false);
+        reject(new Error("Upload timed out after 60 seconds. Please check your internet connection or try a smaller image."));
+      }, 60000);
+
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+          console.log('Upload is ' + progress + '% done');
+        }, 
+        (error) => {
+          clearTimeout(timeout);
+          setIsUploading(false);
+          console.error("Upload error:", error);
+          reject(error);
+        }, 
+        async () => {
+          clearTimeout(timeout);
+          setIsUploading(false);
+          console.log("Upload complete, getting download URL...");
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(downloadURL);
+          } catch (err) {
+            reject(err);
+          }
+        }
+      );
+    });
   };
 
   const handleAddRestaurant = async (data: any) => {
@@ -356,9 +413,27 @@ export default function App() {
 
         {loading && (
           <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[200] flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-col items-center gap-4 w-full max-w-xs px-6">
               <div className="w-12 h-12 border-4 border-[#1D9E75] border-t-transparent rounded-full animate-spin" />
-              <p className="text-[#1D9E75] font-bold animate-pulse">{t('loading')}</p>
+              <p className="text-[#1D9E75] font-bold animate-pulse">
+                {isUploading ? t('uploading') || 'Uploading...' : t('loading')}
+              </p>
+              
+              {isUploading && (
+                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${uploadProgress}%` }}
+                    className="bg-[#1D9E75] h-full"
+                  />
+                </div>
+              )}
+              
+              {isUploading && (
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  {Math.round(uploadProgress)}%
+                </p>
+              )}
             </div>
           </div>
         )}
