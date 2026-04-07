@@ -190,9 +190,29 @@ export async function seedDatabase() {
     if (!existing || existing.length === 0) {
       console.log("Seeding database with sample restaurants and reviews...");
       for (const restaurant of SAMPLE_RESTAURANTS) {
+        const restaurantToInsert = {
+          name: restaurant.name,
+          address: restaurant.address,
+          dishes: restaurant.dishes,
+          price: restaurant.price,
+          avg_price: restaurant.avgPrice,
+          rating: restaurant.rating,
+          avg_rating: restaurant.avgRating,
+          review_count: restaurant.reviewCount,
+          total_reviews: restaurant.totalReviews,
+          description: restaurant.description,
+          location: restaurant.location,
+          photo_url: (restaurant as any).photoUrl || null,
+          likes: restaurant.likes,
+          dislikes: restaurant.dislikes,
+          dish_score: restaurant.dishScore,
+          dish_stats: restaurant.dishStats,
+          created_at: new Date().toISOString()
+        };
+
         const { data: restaurantData, error: insertError } = await supabase
           .from('restaurants')
-          .insert([restaurant])
+          .insert([restaurantToInsert])
           .select()
           .single();
         
@@ -203,9 +223,13 @@ export async function seedDatabase() {
           const reviewsToInsert = SAMPLE_REVIEWS
             .filter(review => restaurant.dishes.includes(review.dishId))
             .map(review => ({
-              ...review,
-              restaurantId,
-              createdAt: new Date().toISOString(),
+              restaurant_id: restaurantId,
+              rating: review.rating,
+              comment: review.comment,
+              submitter: review.submitter,
+              price_spent: review.priceSpent,
+              dish_id: review.dishId,
+              created_at: new Date().toISOString(),
               likes: 0,
               dislikes: 0
             }));

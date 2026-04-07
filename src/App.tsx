@@ -124,10 +124,20 @@ export default function App() {
       if (error) {
         console.error('Error fetching restaurants:', error);
       } else {
-        // Map snake_case to camelCase if necessary, but I'll try to keep camelCase in SQL if possible
-        // Actually, Supabase usually returns what's in the DB. 
-        // I'll use camelCase in SQL to match the frontend types.
-        setRestaurants(data as Restaurant[]);
+        // Map snake_case from DB to camelCase for the UI
+        const mappedData = (data || []).map(r => ({
+          ...r,
+          avgPrice: r.avg_price,
+          avgRating: r.avg_rating,
+          reviewCount: r.review_count,
+          totalReviews: r.total_reviews,
+          photoUrl: r.photo_url,
+          createdAt: r.created_at,
+          dishScore: r.dish_score,
+          dishPrices: r.dish_prices,
+          dishStats: r.dish_stats
+        }));
+        setRestaurants(mappedData as Restaurant[]);
       }
       setLoading(false);
     };
@@ -262,17 +272,23 @@ export default function App() {
 
       const { photoFile, ...restData } = data;
       const restaurantData = {
-        ...restData,
-        photoUrl,
+        name: restData.name,
+        address: restData.address,
+        dishes: restData.dishes,
+        price: restData.price,
+        photo_url: photoUrl,
         rating: 0,
-        avgRating: 0,
-        reviewCount: 0,
-        totalReviews: 0,
-        avgPrice: data.price, // Initial price estimate
+        avg_rating: 0,
+        review_count: 0,
+        total_reviews: 0,
+        avg_price: data.price,
         likes: 0,
         dislikes: 0,
-        dishScore: {},
-        createdAt: new Date().toISOString()
+        dish_score: {},
+        description: restData.description,
+        submitter: restData.submitter,
+        location: restData.location,
+        created_at: new Date().toISOString()
       };
       
       const { error } = await supabase
@@ -302,10 +318,14 @@ export default function App() {
       const { error: reviewError } = await supabase
         .from('reviews')
         .insert([{
-          ...restReviewData,
-          restaurantId,
-          photoUrl,
-          createdAt: new Date().toISOString(),
+          restaurant_id: restaurantId,
+          rating: restReviewData.rating,
+          comment: restReviewData.comment,
+          submitter: restReviewData.submitter,
+          price_spent: restReviewData.priceSpent,
+          dish_id: restReviewData.dishId,
+          photo_url: photoUrl,
+          created_at: new Date().toISOString(),
           likes: 0,
           dislikes: 0
         }]);
@@ -313,13 +333,19 @@ export default function App() {
       if (reviewError) throw reviewError;
 
       // 2. Recalculate all metrics
-      const { data: reviews, error: fetchError } = await supabase
+      const { data: reviewsData, error: fetchError } = await supabase
         .from('reviews')
         .select('*')
-        .eq('restaurantId', restaurantId);
+        .eq('restaurant_id', restaurantId);
 
       if (fetchError) throw fetchError;
       
+      const reviews = (reviewsData || []).map(r => ({
+        ...r,
+        priceSpent: r.price_spent,
+        dishId: r.dish_id
+      }));
+
       const totalReviews = reviews.length;
       const totalRating = reviews.reduce((acc, curr) => acc + curr.rating, 0);
       const avgRating = totalRating / totalReviews;
@@ -356,13 +382,13 @@ export default function App() {
         .from('restaurants')
         .update({
           rating: avgRating,
-          avgRating: avgRating,
+          avg_rating: avgRating,
           price: avgPrice,
-          avgPrice: avgPrice,
-          reviewCount: totalReviews,
-          totalReviews: totalReviews,
-          dishScore: dishScore,
-          dishStats: dishStats,
+          avg_price: avgPrice,
+          review_count: totalReviews,
+          total_reviews: totalReviews,
+          dish_score: dishScore,
+          dish_stats: dishStats,
           dishes: Array.from(new Set([...(Object.keys(dishCounts))]))
         })
         .eq('id', restaurantId);

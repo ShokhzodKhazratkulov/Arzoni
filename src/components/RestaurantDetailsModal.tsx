@@ -52,13 +52,21 @@ export default function RestaurantDetailsModal({ isOpen, onClose, restaurant, on
       const { data, error } = await supabase
         .from('reviews')
         .select('*')
-        .eq('restaurantId', restaurant.id)
-        .order('createdAt', { ascending: false });
+        .eq('restaurant_id', restaurant.id)
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching reviews:', error);
       } else {
-        setReviews(data as Review[]);
+        const mappedReviews = (data || []).map(r => ({
+          ...r,
+          restaurantId: r.restaurant_id,
+          createdAt: r.created_at,
+          photoUrl: r.photo_url,
+          priceSpent: r.price_spent,
+          dishId: r.dish_id
+        }));
+        setReviews(mappedReviews as Review[]);
       }
       setLoading(false);
     };
@@ -71,7 +79,7 @@ export default function RestaurantDetailsModal({ isOpen, onClose, restaurant, on
         event: '*', 
         table: 'reviews', 
         schema: 'public',
-        filter: `restaurantId=eq.${restaurant.id}`
+        filter: `restaurant_id=eq.${restaurant.id}`
       }, () => {
         fetchReviews();
       })
