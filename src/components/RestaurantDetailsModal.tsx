@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { X, Star, MapPin, Navigation, User, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Restaurant, Review } from '../types';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
 import { DISH_TYPES } from '../constants';
 
 enum OperationType {
@@ -49,43 +48,64 @@ export default function RestaurantDetailsModal({ isOpen, onClose, restaurant, on
     if (!isOpen || !restaurant.id) return;
 
     setLoading(true);
-    const reviewsRef = collection(db, 'restaurants', restaurant.id, 'reviews');
-    const q = query(reviewsRef, orderBy('createdAt', 'desc'));
+    const fetchReviews = async () => {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('restaurantId', restaurant.id)
+        .order('createdAt', { ascending: false });
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const reviewsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Review[];
-      setReviews(reviewsData);
+      if (error) {
+        console.error('Error fetching reviews:', error);
+      } else {
+        setReviews(data as Review[]);
+      }
       setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, reviewsRef.path);
-      setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    fetchReviews();
+
+    const channel = supabase
+      .channel(`reviews_${restaurant.id}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        table: 'reviews', 
+        schema: 'public',
+        filter: `restaurantId=eq.${restaurant.id}`
+      }, () => {
+        fetchReviews();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [isOpen, restaurant.id]);
 
   const handleReviewReact = async (reviewId: string, type: 'likes' | 'dislikes') => {
     if (!restaurant.id) return;
-    const reviewPath = `restaurants/${restaurant.id}/reviews/${reviewId}`;
-    const restaurantPath = `restaurants/${restaurant.id}`;
     
     try {
-      const reviewRef = doc(db, 'restaurants', restaurant.id, 'reviews', reviewId);
-      const restaurantRef = doc(db, 'restaurants', restaurant.id);
+      // 1. Update review
+      const review = reviews.find(r => r.id === reviewId);
+      if (!review) return;
+
+      const { error: reviewError } = await supabase
+        .from('reviews')
+        .update({ [type]: (review[type] || 0) + 1 })
+        .eq('id', reviewId);
+
+      if (reviewError) throw reviewError;
       
-      await updateDoc(reviewRef, {
-        [type]: increment(1)
-      });
-      
-      await updateDoc(restaurantRef, {
-        [type]: increment(1)
-      });
+      // 2. Update restaurant
+      const { error: restaurantError } = await supabase
+        .from('restaurants')
+        .update({ [type]: (restaurant[type] || 0) + 1 })
+        .eq('id', restaurant.id);
+
+      if (restaurantError) throw restaurantError;
     } catch (error) {
       console.error(`Error updating review ${type}:`, error);
-      handleFirestoreError(error, OperationType.WRITE, reviewPath);
     }
   };
 

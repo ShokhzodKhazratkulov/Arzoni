@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from 'react';
-import { collection, onSnapshot, query, addDoc, orderBy, doc, updateDoc, getDocs } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { supabase } from './supabase';
 import imageCompression from 'browser-image-compression';
-import { db, storage } from './firebase';
 import { seedDatabase } from './seed';
 import { Restaurant, SortOption, Review } from './types';
 import { PRICE_RANGES } from './constants';
@@ -117,20 +115,36 @@ export default function App() {
     // Seed database with sample data if empty
     seedDatabase();
 
-    const q = query(collection(db, 'restaurants'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Restaurant[];
-      setRestaurants(data);
-      setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'restaurants');
-      setLoading(false);
-    });
+    const fetchRestaurants = async () => {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    return () => unsubscribe();
+      if (error) {
+        console.error('Error fetching restaurants:', error);
+      } else {
+        // Map snake_case to camelCase if necessary, but I'll try to keep camelCase in SQL if possible
+        // Actually, Supabase usually returns what's in the DB. 
+        // I'll use camelCase in SQL to match the frontend types.
+        setRestaurants(data as Restaurant[]);
+      }
+      setLoading(false);
+    };
+
+    fetchRestaurants();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('restaurants_changes')
+      .on('postgres_changes', { event: '*', table: 'restaurants', schema: 'public' }, () => {
+        fetchRestaurants();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const filteredRestaurants = useMemo(() => {
@@ -201,44 +215,31 @@ export default function App() {
       console.error('Compression failed, uploading original:', error);
     }
 
-    const storageRef = ref(storage, path);
-    const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
-
     setIsUploading(true);
     setUploadProgress(0);
 
-    return new Promise<string>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        uploadTask.cancel();
-        setIsUploading(false);
-        reject(new Error("Upload timed out after 60 seconds. Please check your internet connection or try a smaller image."));
-      }, 60000);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${path}/${fileName}`;
 
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-          console.log('Upload is ' + progress + '% done');
-        }, 
-        (error) => {
-          clearTimeout(timeout);
-          setIsUploading(false);
-          console.error("Upload error:", error);
-          reject(error);
-        }, 
-        async () => {
-          clearTimeout(timeout);
-          setIsUploading(false);
-          console.log("Upload complete, getting download URL...");
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve(downloadURL);
-          } catch (err) {
-            reject(err);
-          }
-        }
-      );
-    });
+    const { data, error } = await supabase.storage
+      .from('photos')
+      .upload(filePath, fileToUpload, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (error) {
+      setIsUploading(false);
+      throw error;
+    }
+
+    setIsUploading(false);
+    const { data: { publicUrl } } = supabase.storage
+      .from('photos')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
   };
 
   const handleAddRestaurant = async (data: any) => {
@@ -249,7 +250,6 @@ export default function App() {
       
       if (isDuplicate) {
         console.warn("Restaurant already exists!");
-        // We could show a toast here if we had one, but for now we'll just skip adding
         setIsModalOpen(false);
         return;
       }
@@ -257,8 +257,7 @@ export default function App() {
       setLoading(true);
       let photoUrl = '';
       if (data.photoFile) {
-        const timestamp = new Date().getTime();
-        photoUrl = await uploadImage(data.photoFile, `restaurants/${timestamp}`);
+        photoUrl = await uploadImage(data.photoFile, 'restaurants');
       }
 
       const { photoFile, ...restData } = data;
@@ -275,40 +274,51 @@ export default function App() {
         dishScore: {},
         createdAt: new Date().toISOString()
       };
-      await addDoc(collection(db, 'restaurants'), restaurantData);
+      
+      const { error } = await supabase
+        .from('restaurants')
+        .insert([restaurantData]);
+
+      if (error) throw error;
       setIsModalOpen(false);
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'restaurants');
+      console.error('Error adding restaurant:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddReview = async (restaurantId: string, reviewData: any) => {
-    const reviewsPath = `restaurants/${restaurantId}/reviews`;
-    const restaurantPath = `restaurants/${restaurantId}`;
     try {
       setLoading(true);
       let photoUrl = '';
       if (reviewData.photoFile) {
-        const timestamp = new Date().getTime();
-        photoUrl = await uploadImage(reviewData.photoFile, `reviews/${restaurantId}/${timestamp}`);
+        photoUrl = await uploadImage(reviewData.photoFile, `reviews/${restaurantId}`);
       }
 
       const { photoFile, ...restReviewData } = reviewData;
-      // 1. Add review to subcollection
-      const reviewsRef = collection(db, 'restaurants', restaurantId, 'reviews');
-      await addDoc(reviewsRef, {
-        ...restReviewData,
-        photoUrl,
-        createdAt: new Date().toISOString(),
-        likes: 0,
-        dislikes: 0
-      });
+      
+      // 1. Add review
+      const { error: reviewError } = await supabase
+        .from('reviews')
+        .insert([{
+          ...restReviewData,
+          restaurantId,
+          photoUrl,
+          createdAt: new Date().toISOString(),
+          likes: 0,
+          dislikes: 0
+        }]);
+
+      if (reviewError) throw reviewError;
 
       // 2. Recalculate all metrics
-      const snapshot = await getDocs(reviewsRef);
-      const reviews = snapshot.docs.map(doc => doc.data()) as Review[];
+      const { data: reviews, error: fetchError } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('restaurantId', restaurantId);
+
+      if (fetchError) throw fetchError;
       
       const totalReviews = reviews.length;
       const totalRating = reviews.reduce((acc, curr) => acc + curr.rating, 0);
@@ -317,7 +327,6 @@ export default function App() {
       const totalPrice = reviews.reduce((acc, curr) => acc + curr.priceSpent, 0);
       const avgPrice = totalPrice / totalReviews;
 
-      // Calculate dishScore map (fraction of reviewers who ate each dish)
       const dishCounts: { [dishId: string]: number } = {};
       const dishGroupedPrices: { [dishId: string]: number[] } = {};
       
@@ -342,25 +351,28 @@ export default function App() {
         };
       });
 
-      // 3. Update parent document with pre-computed fields
-      const restaurantRef = doc(db, 'restaurants', restaurantId);
-      await updateDoc(restaurantRef, {
-        rating: avgRating,
-        avgRating: avgRating,
-        price: avgPrice,
-        avgPrice: avgPrice,
-        reviewCount: totalReviews,
-        totalReviews: totalReviews,
-        dishScore: dishScore,
-        dishStats: dishStats,
-        // Also update the 'dishes' array to include any new dishes mentioned in reviews
-        dishes: Array.from(new Set([...(Object.keys(dishCounts))]))
-      });
+      // 3. Update parent document
+      const { error: updateError } = await supabase
+        .from('restaurants')
+        .update({
+          rating: avgRating,
+          avgRating: avgRating,
+          price: avgPrice,
+          avgPrice: avgPrice,
+          reviewCount: totalReviews,
+          totalReviews: totalReviews,
+          dishScore: dishScore,
+          dishStats: dishStats,
+          dishes: Array.from(new Set([...(Object.keys(dishCounts))]))
+        })
+        .eq('id', restaurantId);
+
+      if (updateError) throw updateError;
       
       setIsModalOpen(false);
       setInitialRestaurantForModal(null);
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, reviewsPath);
+      console.error('Error adding review:', error);
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,4 @@
-import { collection, addDoc, getDocs, query, limit, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { supabase } from './supabase';
 import { TASHKENT_CENTER } from './constants';
 
 enum OperationType {
@@ -180,86 +179,51 @@ const SAMPLE_REVIEWS = [
 ];
 
 export async function seedDatabase() {
-  const restaurantsCol = collection(db, 'restaurants');
   try {
-    const snapshot = await getDocs(query(restaurantsCol, limit(1)));
+    const { data: existing, error: fetchError } = await supabase
+      .from('restaurants')
+      .select('id')
+      .limit(1);
     
-    if (snapshot.empty) {
+    if (fetchError) throw fetchError;
+
+    if (!existing || existing.length === 0) {
       console.log("Seeding database with sample restaurants and reviews...");
       for (const restaurant of SAMPLE_RESTAURANTS) {
-        const docRef = await addDoc(restaurantsCol, restaurant);
+        const { data: restaurantData, error: insertError } = await supabase
+          .from('restaurants')
+          .insert([restaurant])
+          .select()
+          .single();
         
-        // Add a few reviews for each restaurant to test the subcollection
-        const reviewsCol = collection(db, 'restaurants', docRef.id, 'reviews');
-        for (const review of SAMPLE_REVIEWS) {
-          // Only add reviews that match the restaurant's dishes or just random ones for testing
-          if (restaurant.dishes.includes(review.dishId)) {
-            await addDoc(reviewsCol, {
+        if (insertError) throw insertError;
+
+        if (restaurantData) {
+          const restaurantId = restaurantData.id;
+          const reviewsToInsert = SAMPLE_REVIEWS
+            .filter(review => restaurant.dishes.includes(review.dishId))
+            .map(review => ({
               ...review,
-              restaurantId: docRef.id,
+              restaurantId,
               createdAt: new Date().toISOString(),
               likes: 0,
               dislikes: 0
-            });
+            }));
+
+          if (reviewsToInsert.length > 0) {
+            const { error: reviewsError } = await supabase
+              .from('reviews')
+              .insert(reviewsToInsert);
+            
+            if (reviewsError) throw reviewsError;
           }
         }
       }
       console.log("Database seeded successfully!");
     } else {
-      // If database is not empty, we might want to update existing docs with new fields if they are missing
-      console.log("Database already has data. Checking for missing fields and duplicates...");
-      const allDocs = await getDocs(restaurantsCol);
-      const seenRestaurants = new Map<string, string>(); // name + address -> docId
-      
-      for (const docSnapshot of allDocs.docs) {
-        const data = docSnapshot.data();
-        const identifier = `${data.name}|${data.address}`.toLowerCase().trim();
-        
-        // Remove duplicates by name and address
-        if (seenRestaurants.has(identifier)) {
-          console.log(`Removing duplicate restaurant: ${data.name} at ${data.address} (${docSnapshot.id})`);
-          try {
-            await deleteDoc(doc(db, 'restaurants', docSnapshot.id));
-          } catch (error) {
-            handleFirestoreError(error, OperationType.DELETE, `restaurants/${docSnapshot.id}`, false);
-          }
-          continue;
-        }
-        seenRestaurants.set(identifier, docSnapshot.id);
-
-        if (data.dishScore === undefined || data.dishPrices === undefined || data.dishStats === undefined) {
-          console.log(`Updating ${data.name} with default pre-computed fields...`);
-          // Assign some default scores and prices based on their dishes
-          const scores: { [key: string]: number } = {};
-          const prices: { [key: string]: number } = {};
-          const stats: { [key: string]: { avgPrice: number; reviewCount: number } } = {};
-          if (data.dishes && data.dishes.length > 0) {
-            data.dishes.forEach((dishId: string, idx: number) => {
-              scores[dishId] = idx === 0 ? 0.7 : 0.3 / (data.dishes.length - 1 || 1);
-              prices[dishId] = data.price || 25000;
-              stats[dishId] = {
-                avgPrice: data.price || 25000,
-                reviewCount: Math.floor((data.reviewCount || 10) * (scores[dishId] || 0.1))
-              };
-            });
-          }
-          
-          try {
-            await updateDoc(doc(db, 'restaurants', docSnapshot.id), {
-              avgPrice: data.price || 25000,
-              avgRating: data.rating || 4.5,
-              totalReviews: data.reviewCount || 10,
-              dishScore: scores,
-              dishPrices: prices,
-              dishStats: stats
-            });
-          } catch (error) {
-            handleFirestoreError(error, OperationType.UPDATE, `restaurants/${docSnapshot.id}`, false);
-          }
-        }
-      }
+      console.log("Database already has data.");
     }
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'restaurants', false);
+    console.error('Error seeding database:', error);
   }
 }

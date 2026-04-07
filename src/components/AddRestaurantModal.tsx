@@ -5,8 +5,7 @@ import { DISH_TYPES, TASHKENT_CENTER } from '../constants';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
 import { Restaurant } from '../types';
 
 enum OperationType {
@@ -119,18 +118,17 @@ export default function AddRestaurantModal({ isOpen, onClose, onSubmit, onAddRev
 
       setIsSearching(true);
       try {
-        // Simple prefix search
-        const q = query(
-          collection(db, 'restaurants'),
-          where('name', '>=', searchTerm),
-          where('name', '<=', searchTerm + '\uf8ff'),
-          limit(5)
-        );
-        const snapshot = await getDocs(q);
-        const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Restaurant[];
-        setSuggestions(results);
+        // Supabase search using ilike
+        const { data, error } = await supabase
+          .from('restaurants')
+          .select('*')
+          .ilike('name', `%${searchTerm}%`)
+          .limit(5);
+
+        if (error) throw error;
+        setSuggestions(data as Restaurant[]);
       } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, 'restaurants');
+        console.error('Error searching restaurants:', error);
       } finally {
         setIsSearching(false);
       }
